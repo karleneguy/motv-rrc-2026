@@ -169,6 +169,24 @@
     .qtop{gap:10px}.qnum{width:30px;height:30px}
   }
 </style>
+
+<style>
+.start-panel{margin-top:22px}
+.quiz-section{scroll-margin-top:18px}
+.question-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.question-status{font-size:.86rem;color:var(--muted);font-weight:750}
+.locked-status{color:var(--green)}
+.error-inline{color:#a33}
+.locked-question{border-color:#c9dfd3;background:linear-gradient(180deg,#fff,#fbfefc)}
+.locked-question .option{cursor:default}
+.locked-question .option:not(.selected){opacity:.72}
+.question-feedback{display:none;margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+.question-feedback.show{display:block}
+.feedback-title{font-weight:850;margin-bottom:10px}
+.feedback-ok{background:var(--greenSoft);border:1px solid #cbe7d7;color:#205f47;border-radius:12px;padding:12px}
+.mini-refs{margin-top:10px;color:var(--muted);font-size:.82rem}
+#afterMainArea{display:none}
+</style>
 </head>
 <body>
 <main class="shell" id="app"></main>
@@ -189,12 +207,6 @@
        GET   returns an array of submission JSON objects
     No quiz/UI rewrite is required.
 */
-const REMOTE_API_URL = "https://agctxecwjdoypavqlbya.supabase.co/functions/v1/motv-submit";
-const LIVE_DASHBOARD_ENABLED = Boolean(REMOTE_API_URL);
-const STORAGE_KEY = "motv_submissions_v2";
-const COMPLETED_KEY = "motv_submission_completed_v2";
-const LAST_SUBMISSION_KEY = "motv_last_submission_v2";
-const EVER_SUBMITTED_KEY = "motv_has_submitted_once_v2";
 
 const references = {
   odriscoll2017: {
@@ -327,7 +339,6 @@ const quizSections = [
         {id:"co",text:"May be misleading in abnormal haemoglobin states",grade:"correct",why:"Conventional pulse oximetry cannot reliably distinguish some abnormal haemoglobin species and can therefore produce misleadingly reassuring readings.",refs:["pretto2014"]},
         {id:"skin",text:"May read falsely high in some people with darker skin",grade:"correct",why:"Studies have found greater risk of pulse oximetry overestimating arterial saturation in some patients with darker skin pigmentation. Performance varies by device and circumstance.",refs:["sjoding2020","fawzy2022"]},
         {id:"stale",text:"Values may be delayed, held or stale when the signal is poor or lost",grade:"correct",why:"Signal averaging and signal loss can mean a displayed value does not fully reflect the patient’s current condition.",refs:["pretto2014","fda2025"]},
-        {id:"unreliable_on_o2",text:"Pulse oximetry is less reliable in a patient receiving supplemental oxygen",grade:"wrong",why:"Pulse oximetry remains useful during oxygen therapy. The limitation is that it must be interpreted in context and does not independently assess ventilation or the amount of oxygen support required.",refs:["pretto2014","mcgrath2026"]},
         {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
       ],}]
   },
@@ -365,7 +376,6 @@ const quizSections = [
         {id:"device",text:"Type of oxygen delivery device",grade:"correct",why:"Nasal cannulae, simple masks, Venturi masks, reservoir masks and high-flow systems deliver oxygen differently and provide different degrees of FiO₂ control.",refs:["moga2016"]},
         {id:"source",text:"Type of oxygen source (e.g., liquid oxygen, compressed cylinder, PSA plant, oxygen concentrator)",grade:"correct",why:"Different oxygen sources can influence the oxygen that ultimately reaches the patient. The differences may be small when systems are functioning normally, but sources can differ in oxygen concentration, available flow and pressure, capacity, reliability, and risk of interruption or depletion.",refs:["who2020","tariq2024"]},
         {id:"source_on",text:"Whether the oxygen source is turned on and has adequate oxygen supply",grade:"correct",why:"The delivery system cannot provide the intended therapy if the source is off, depleted or unable to supply the required flow.",refs:["who2020","odriscoll2017"]},
-        {id:"spo2_number",text:"The SpO₂ number displayed on the pulse oximeter",grade:"wrong",why:"SpO₂ reflects the patient’s physiological response. It does not determine the amount or concentration of oxygen being delivered.",refs:["pretto2014","seeley2015"]},
         {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
       ],}]
   },
@@ -428,445 +438,461 @@ const optionalFeedback = {
 };
 
 const app = document.getElementById("app");
-const isDashboard = new URLSearchParams(location.search).get("dashboard") === "1";
+
+const REMOTE_API_URL = "https://agctxecwjdoypavqlbya.supabase.co/functions/v1/motv-submit";
+const QUIZ_VERSION = "MOTV-LunchLearn-2026-09-v3";
+const EVENT_KEY = "rrc-2026-09-24";
+const SESSION_KEY = "motv_live_session_v3";
+const COMPLETED_KEY = "motv_submission_completed_v3";
+const LAST_SUBMISSION_KEY = "motv_last_submission_v3";
+const EVER_SUBMITTED_KEY = "motv_has_submitted_once_v3";
+const MAIN_IDS = ["q1","q2","q3","q4","q5"];
+const TF_IDS = ["q6a","q6b","q6c","q6d","q6e","q6f"];
 
 function esc(s=""){
   return String(s).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 }
-function uid(){return "motv_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,9)}
 function shortRefs(ids=[]){return ids.map(id=>references[id]?.short).filter(Boolean).join("; ")}
 function allQuestions(){return quizSections.flatMap(s=>s.questions)}
+function questionById(id){return allQuestions().find(q=>q.id===id)}
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||"null")}catch{return null}}
+function saveSession(session){localStorage.setItem(SESSION_KEY,JSON.stringify(session))}
+function clearSession(){localStorage.removeItem(SESSION_KEY)}
+
+async function api(payload){
+  const r=await fetch(REMOTE_API_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({event_key:EVENT_KEY,...payload})
+  });
+  const body=await r.json().catch(()=>({}));
+  if(!r.ok){const err=new Error(body.error||"Request failed");err.status=r.status;throw err}
+  return body;
+}
 
 function renderParticipant(){
-  const completed = localStorage.getItem(COMPLETED_KEY) === "true";
+  const completed=localStorage.getItem(COMPLETED_KEY)==="true";
   if(completed){
-    const raw = localStorage.getItem(LAST_SUBMISSION_KEY);
+    const raw=localStorage.getItem(LAST_SUBMISSION_KEY);
     if(raw){
-      try{return renderPostSubmit(JSON.parse(raw), true)}catch(e){}
+      try{const saved=JSON.parse(raw);return renderPostSubmit(saved,true,saved.resultsOnly===true)}catch{}
     }
   }
 
-  let html = `
+  const existing=getSession();
+  let html=`
     <header class="hero">
       <div class="eyebrow">Making Oxygen Therapy Visible™</div>
       <h1>Lunch & Learn</h1>
     </header>
     <div class="notice">Educational content should be used with patient-specific orders, your own clinical judgement and applicable local policy. Making Oxygen Therapy Visible™ does not replace your professional responsibilities, applicable clinical guidelines, facility policies or protocols.</div>
-    <form id="motvForm" novalidate>
+
+    <section class="submit-panel start-panel" id="startPanel" ${existing?'style="display:none"':''}>
+      <h2 style="margin-top:0">Before you begin</h2>
+      <p class="small">Choose the option that applies to this attempt. A first-time practising-nurse attempt is included in the live results. Practice/retake attempts stay on this device only.</p>
+      <label class="ack" id="mode_live_label">
+        <input type="radio" name="start_mode" id="mode_live" value="live">
+        <span><strong>I am currently a practising nurse, and this is my first time submitting this quiz.</strong><br><span class="small">My answers will be submitted question by question and included in the live dashboard.</span></span>
+      </label>
+      <label class="ack" id="mode_practice_label" style="margin-top:10px">
+        <input type="radio" name="start_mode" id="mode_practice" value="practice">
+        <span><strong>I am not currently a practising nurse, or I have completed this quiz before.</strong><br><span class="small">I am taking it for learning or practice only. Nothing from this attempt will be sent.</span></span>
+      </label>
+      <div class="error" id="startError" role="alert"></div>
+      <div class="actions"><button class="btn btn-primary" id="startBtn" type="button" disabled>Start quiz</button></div>
+    </section>
+
+    <form id="motvForm" novalidate ${existing?'':'style="display:none"'}>
+      <div id="quizFlow">
   `;
 
-  let displayN = 1;
+  let displayN=1;
   for(const section of quizSections){
-    html += `<div class="section-heading"><h2>${esc(section.title)}</h2></div>`;
+    const firstId=section.questions[0]?.id||"";
+    html+=`<div class="quiz-section" data-first-question="${firstId}"><div class="section-heading"><h2>${esc(section.title)}</h2></div>`;
     for(const q of section.questions){
-      html += `<section class="card" data-question="${q.id}">
-        <div class="qtop"><div class="qnum">${displayN++}</div><div><div class="qtext">${esc(q.prompt)}</div>${q.description ? `<div class="qhint" style="margin-top:8px">${esc(q.description)}</div>` : ""}${q.type === "multi" ? `<div class="qhint">Select all that apply.</div>` : ""}</div></div>
+      const isMain=MAIN_IDS.includes(q.id);
+      html+=`<section class="card" data-question="${q.id}">
+        <div class="qtop"><div class="qnum">${displayN++}</div><div><div class="qtext">${esc(q.prompt)}</div>${q.description?`<div class="qhint" style="margin-top:8px">${esc(q.description)}</div>`:""}${q.type==="multi"?`<div class="qhint">Select all that apply.</div>`:""}</div></div>
         <div class="options">`;
       for(const o of q.options){
-        const type = q.type === "single" ? "radio" : "checkbox";
-        html += `<label class="option" data-option="${o.id}">
-          <input type="${type}" name="${q.id}${q.type === "multi" ? "[]" : ""}" value="${o.id}" ${o.confidence ? 'data-confidence="1"' : ""}>
+        const type=q.type==="single"?"radio":"checkbox";
+        html+=`<label class="option" data-option="${o.id}">
+          <input type="${type}" name="${q.id}${q.type==="multi"?"[]":""}" value="${o.id}" ${o.confidence?'data-confidence="1"':""}>
           <span class="option-text">${esc(o.text)}</span>
         </label>`;
       }
-      html += `</div></section>`;
+      html+=`</div>`;
+      if(isMain){
+        html+=`<div class="question-actions"><button class="btn btn-primary question-submit" type="button" data-submit-question="${q.id}">Submit answer</button><span class="question-status" id="status_${q.id}"></span></div><div class="question-feedback" id="feedback_${q.id}"></div>`;
+      }
+      html+=`</section>`;
     }
+    html+=`</div>`;
   }
 
-  html += `
-    <section class="optional-panel" id="courseFeedback">
-      <div class="optional-head"><div class="eyebrow" style="color:#49616f;opacity:1">Optional</div><h2>Course feedback</h2></div>
-      <div class="optional-body">${renderOptionalFields(optionalFeedback.course,"course")}</div>
-    </section>
-
-    <section class="optional-panel" id="deviceFeedback">
-      <div class="optional-head"><div class="eyebrow" style="color:#49616f;opacity:1">Optional</div><h2>Conserve Tree™ feedback</h2></div>
-      <div class="optional-body">
-        ${renderOptionalFields(optionalFeedback.device,"device")}
-        <div class="field-group">
-          <div class="field-label">Optional follow-up</div>
-          <p class="small">If you would like Karlene to contact you to discuss your feedback further, you may leave your name and email below. Providing contact information is optional. See the <a href="https://www.conservemed.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
-          <div class="two-col">
-            <div><label class="small" for="contact_name">Name</label><input id="contact_name" name="contact_name" type="text" autocomplete="name" placeholder="Optional"></div>
-            <div><label class="small" for="contact_email">Email</label><input id="contact_email" name="contact_email" type="email" autocomplete="email" placeholder="Optional"></div>
-          </div>
-          <div style="margin-top:12px">
-            <label class="small" for="contact_notes">What would you like to discuss?</label>
-            <textarea id="contact_notes" name="contact_notes" placeholder="Optional"></textarea>
-          </div>
-          <label class="ack" style="margin-top:12px">
-            <input type="checkbox" id="share_quiz_results" name="share_quiz_results">
-            <span><strong>Send my quiz result to my Making Oxygen Therapy Visible™ trainer.</strong><br><span class="small">Once you book your session, we will match your quiz results to your trainer to help guide the session. <a href="https://www.conservemed.com/nurse-training" target="_blank" rel="noopener">Learn more</a>.</span></span>
-          </label>
-        </div>
+  html+=`
       </div>
-    </section>
 
-    <section class="submit-panel">
-      <h2 style="margin-top:0">Final acknowledgement</h2>
-      <label class="ack" id="ack_submit_label"><input type="checkbox" id="ack_submit" name="completion_mode" value="submit"><span><strong>I am currently a practising nurse, and this is my first time submitting this quiz.</strong><br><span class="small">Submissions are included in the response dataset, and you will be sent to the results page after submitting.</span></span></label>
-      <label class="ack" id="ack_results_only_label" style="margin-top:10px"><input type="checkbox" id="ack_results_only" name="completion_mode" value="results_only"><span><strong>I am not currently a practising nurse, or I have completed this quiz before.</strong><br><span class="small">I am taking it for learning or practice only. My answers and feedback will not be saved or sent anywhere.</span></span></label>
-      <div class="error" id="formError" role="alert"></div>
-      <div class="actions">
-        <button class="btn btn-primary" id="submitBtn" type="button" disabled>Submit responses</button>
-        <button class="btn btn-secondary" id="resultsOnlyBtn" type="button" disabled>Get results without submitting</button>
+      <div id="afterMainArea">
+        <section class="optional-panel" id="courseFeedback">
+          <div class="optional-head"><div class="eyebrow" style="color:#49616f;opacity:1">Optional</div><h2>Course feedback</h2></div>
+          <div class="optional-body">${renderOptionalFields(optionalFeedback.course)}</div>
+        </section>
+
+        <section class="optional-panel" id="deviceFeedback">
+          <div class="optional-head"><div class="eyebrow" style="color:#49616f;opacity:1">Optional</div><h2>Conserve Tree™ feedback</h2></div>
+          <div class="optional-body">
+            ${renderOptionalFields(optionalFeedback.device)}
+            <div class="field-group">
+              <div class="field-label">Optional follow-up</div>
+              <p class="small">If you would like Karlene to contact you to discuss your feedback further, you may leave your name and email below. Providing contact information is optional. See the <a href="https://www.conservemed.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+              <div class="two-col">
+                <div><label class="small" for="contact_name">Name</label><input id="contact_name" name="contact_name" type="text" autocomplete="name" placeholder="Optional"></div>
+                <div><label class="small" for="contact_email">Email</label><input id="contact_email" name="contact_email" type="email" autocomplete="email" placeholder="Optional"></div>
+              </div>
+              <div style="margin-top:12px"><label class="small" for="contact_notes">What would you like to discuss?</label><textarea id="contact_notes" name="contact_notes" placeholder="Optional"></textarea></div>
+              <label class="ack" style="margin-top:12px"><input type="checkbox" id="share_quiz_results" name="share_quiz_results"><span><strong>Send my quiz result to my Making Oxygen Therapy Visible™ trainer.</strong><br><span class="small">Once you book your session, we will match your quiz results to your trainer to help guide the session. <a href="https://www.conservemed.com/nurse-training" target="_blank" rel="noopener">Learn more</a>.</span></span></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="submit-panel" id="finalPanel">
+          <h2 style="margin-top:0">Finish</h2>
+          <p class="small"><strong>Your True/False answers are not revealed until you finish here.</strong> Optional feedback above may be left blank.</p>
+          <div class="error" id="formError" role="alert"></div>
+          <div class="actions"><button class="btn btn-primary" id="finalSubmitBtn" type="button">Submit & see my results</button></div>
+        </section>
       </div>
-    </section>
     </form>
   `;
-  app.innerHTML = html;
+
+  app.innerHTML=html;
   bindParticipantEvents();
-  updateProgress();
+
+  const hasSubmittedBefore=localStorage.getItem(EVER_SUBMITTED_KEY)==="true";
+  if(!existing && hasSubmittedBefore){
+    const live=document.getElementById("mode_live");
+    const practice=document.getElementById("mode_practice");
+    if(live) live.disabled=true;
+    if(practice){practice.checked=true;document.getElementById("startBtn").disabled=false}
+    const label=document.getElementById("mode_live_label");
+    if(label) label.title="A first submission has already been recorded from this browser. Retakes use practice mode.";
+  }
+
+  if(existing){
+    applySessionState(existing);
+    if(existing.mode==="live") recoverRemoteStatus(existing);
+  } else {
+    applyFlowVisibility(null);
+  }
+  syncSelectedStyles();
 }
 
-function renderOptionalFields(fields,prefix){
+function renderOptionalFields(fields){
   return fields.map(f=>{
-    if(f.type === "text"){
-      return `<div class="field-group"><label class="field-label" for="${f.id}">${esc(f.label)}</label><textarea id="${f.id}" name="${f.id}" placeholder="Optional"></textarea></div>`;
-    }
-    const noteId = `${f.id}_notes`;
-    return `<div class="field-group">
-      <div class="field-label">${esc(f.label)}</div>
-      <div class="choice-row" role="group" aria-label="${esc(f.label)}">
-        ${["Yes","No","It depends"].map(v=>`<label class="choice-pill"><input type="radio" name="${f.id}" value="${v}"><span>${v}</span></label>`).join("")}
-      </div>
-      <div class="conditional" id="${noteId}_wrap">
-        <label class="small" for="${noteId}">${esc(f.notesLabel || "If it depends, please tell us more")}</label>
-        <textarea id="${noteId}" name="${noteId}" placeholder="Optional"></textarea>
-      </div>
-    </div>`;
+    if(f.type==="text") return `<div class="field-group"><label class="field-label" for="${f.id}">${esc(f.label)}</label><textarea id="${f.id}" name="${f.id}" placeholder="Optional"></textarea></div>`;
+    const noteId=`${f.id}_notes`;
+    return `<div class="field-group"><div class="field-label">${esc(f.label)}</div><div class="choice-row" role="group" aria-label="${esc(f.label)}">${["Yes","No","It depends"].map(v=>`<label class="choice-pill"><input type="radio" name="${f.id}" value="${v}"><span>${v}</span></label>`).join("")}</div><div class="conditional" id="${noteId}_wrap"><label class="small" for="${noteId}">${esc(f.notesLabel||"If it depends, please tell us more")}</label><textarea id="${noteId}" name="${noteId}" placeholder="Optional"></textarea></div></div>`;
   }).join("");
 }
 
 function bindParticipantEvents(){
-  const form = document.getElementById("motvForm");
-  form.addEventListener("change", e=>{
-    const input = e.target;
-    // “I’m not confident” is intentionally independent of the clinical selections.
-    // Participants may select it in addition to any other answer(s).
-    if(input.type === "radio" && optionalFieldIds().includes(input.name)){
-      const wrap = document.getElementById(`${input.name}_notes_wrap`);
-      if(wrap) wrap.classList.toggle("show", input.value === "It depends");
+  document.querySelectorAll('[name="start_mode"]').forEach(x=>x.addEventListener("change",()=>{document.getElementById("startBtn").disabled=false}));
+  document.getElementById("startBtn")?.addEventListener("click",startQuiz);
+
+  const form=document.getElementById("motvForm");
+  form?.addEventListener("submit",e=>e.preventDefault());
+  form?.addEventListener("change",e=>{
+    const input=e.target;
+    if(input.type==="radio" && optionalFieldIds().includes(input.name)){
+      const wrap=document.getElementById(`${input.name}_notes_wrap`);
+      if(wrap) wrap.classList.toggle("show",input.value==="It depends");
     }
-    if(input.id === "ack_submit" && input.checked){
-      const other=document.getElementById("ack_results_only"); if(other) other.checked=false;
-    }
-    if(input.id === "ack_results_only" && input.checked){
-      const other=document.getElementById("ack_submit"); if(other) other.checked=false;
-    }
-    updateCompletionButtons();
     syncSelectedStyles();
-    updateProgress();
   });
-  form.addEventListener("input", updateProgress);
-  form.addEventListener("submit", e=>e.preventDefault());
-  document.getElementById("submitBtn")?.addEventListener("click", ()=>handleCompletion("submit"));
-  document.getElementById("resultsOnlyBtn")?.addEventListener("click", ()=>handleCompletion("results_only"));
 
-  const hasSubmittedBefore = localStorage.getItem(EVER_SUBMITTED_KEY) === "true";
-  if(hasSubmittedBefore){
-    const firstTime = document.getElementById("ack_submit");
-    const practice = document.getElementById("ack_results_only");
-    if(firstTime){ firstTime.checked=false; firstTime.disabled=true; }
-    if(practice) practice.checked=true;
-    const label=document.getElementById("ack_submit_label");
-    if(label) label.title="A submission has already been recorded from this browser. Retakes use results-only mode.";
-  }
-  updateCompletionButtons();
-  syncSelectedStyles();
+  document.querySelectorAll("[data-submit-question]").forEach(btn=>btn.addEventListener("click",()=>submitMainQuestion(btn.dataset.submitQuestion)));
+  document.getElementById("finalSubmitBtn")?.addEventListener("click",finalizeQuiz);
 }
 
-function updateCompletionButtons(){
-  const submitAck=Boolean(document.getElementById("ack_submit")?.checked);
-  const resultsOnlyAck=Boolean(document.getElementById("ack_results_only")?.checked);
-  const submitBtn=document.getElementById("submitBtn");
-  const resultsBtn=document.getElementById("resultsOnlyBtn");
-  if(submitBtn) submitBtn.disabled=!submitAck;
-  if(resultsBtn) resultsBtn.disabled=!resultsOnlyAck;
-}
-
-function optionalFieldIds(){return [...optionalFeedback.course,...optionalFeedback.device].filter(x=>x.type==="ynid").map(x=>x.id)}
-function syncSelectedStyles(){
-  document.querySelectorAll("label.option").forEach(l=>l.classList.toggle("selected",Boolean(l.querySelector("input")?.checked)));
-}
-function quizAnsweredCount(){
-  return allQuestions().filter(q=>{
-    return document.querySelectorAll(`[name="${q.id}${q.type==="multi"?"[]":""}"]:checked`).length>0;
-  }).length;
-}
-function updateProgress(){}
-function collectQuizResponses(){
-  const out={};
-  for(const q of allQuestions()){
-    const name = `${q.id}${q.type==="multi"?"[]":""}`;
-    const selected=[...document.querySelectorAll(`[name="${name}"]:checked`)].map(x=>x.value);
-    out[q.id]=q.type==="single" ? (selected[0]||null) : selected;
-  }
-  return out;
-}
-function collectFeedback(){
-  const readRadio=id=>document.querySelector(`[name="${id}"]:checked`)?.value||null;
-  const course={}, device={};
-  for(const f of optionalFeedback.course){
-    course[f.id]=f.type==="text" ? document.getElementById(f.id)?.value.trim()||"" : {answer:readRadio(f.id),notes:document.getElementById(`${f.id}_notes`)?.value.trim()||""};
-  }
-  for(const f of optionalFeedback.device){
-    device[f.id]=f.type==="text" ? document.getElementById(f.id)?.value.trim()||"" : {answer:readRadio(f.id),notes:document.getElementById(`${f.id}_notes`)?.value.trim()||""};
-  }
-  return {course,device,contact:{
-    name:document.getElementById("contact_name")?.value.trim()||"",
-    email:document.getElementById("contact_email")?.value.trim()||"",
-    notes:document.getElementById("contact_notes")?.value.trim()||"",
-    includeQuizResults:Boolean(document.getElementById("share_quiz_results")?.checked)
-  }};
-}
-function validateQuizAndEmail(){
-  const missing=[];
-  for(const q of allQuestions()){
-    const name=`${q.id}${q.type==="multi"?"[]":""}`;
-    if(document.querySelectorAll(`[name="${name}"]:checked`).length===0) missing.push(q.id);
-  }
-  const email=document.getElementById("contact_email")?.value.trim()||"";
-  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {ok:false,message:"Please enter a valid email address, or leave the optional email field blank."};
-  if(missing.length) return {ok:false,message:`Please answer all ${missing.length} remaining quiz question${missing.length===1?"":"s"} before viewing your results. Optional feedback can be skipped.`};
-  return {ok:true};
-}
-
-async function handleCompletion(mode){
-  const err=document.getElementById("formError");
+async function startQuiz(){
+  const mode=document.querySelector('[name="start_mode"]:checked')?.value;
+  if(!mode) return;
+  const btn=document.getElementById("startBtn");
+  const err=document.getElementById("startError");
   err.classList.remove("show");
-  const valid=validateQuizAndEmail();
-  if(!valid.ok){err.textContent=valid.message;err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});return}
-
-  const submitAck=Boolean(document.getElementById("ack_submit")?.checked);
-  const resultsOnlyAck=Boolean(document.getElementById("ack_results_only")?.checked);
-  if(mode==="submit" && !submitAck){
-    err.textContent="To submit your responses, confirm that you are currently a practising nurse and this is your first submission.";
-    err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});return;
-  }
-  if(mode==="results_only" && !resultsOnlyAck){
-    err.textContent="For results without submitting, confirm that you are not currently a practising nurse or that you have completed this quiz before.";
-    err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});return;
-  }
-
-  const submission={
-    id:uid(),
-    submittedAt:new Date().toISOString(),
-    version:"MOTV-LunchLearn-2026-09",
-    nurseAcknowledged:mode==="submit",
-    resultsOnly:mode==="results_only",
-    quiz:collectQuizResponses(),
-    feedback:collectFeedback()
-  };
-
-  if(mode==="results_only"){
-    // Deliberately do not call persistSubmission and do not write this attempt to localStorage.
-    renderPostSubmit(submission,false,true);
-    return;
-  }
-
-  const btn=document.getElementById("submitBtn");btn.disabled=true;btn.textContent="Submitting…";
+  btn.disabled=true;btn.textContent="Starting…";
   try{
-    await persistSubmission(submission);
-    localStorage.setItem(COMPLETED_KEY,"true");
-    localStorage.setItem(EVER_SUBMITTED_KEY,"true");
-    localStorage.setItem(LAST_SUBMISSION_KEY,JSON.stringify(submission));
-    renderPostSubmit(submission,false,false);
-  }catch(error){
-    btn.disabled=false;btn.textContent="Submit responses";
-    err.textContent="Your response could not be saved. Please check the connection and try again.";
+    let session={mode,submissionId:null,token:null,lockedAnswers:{},completed:false};
+    if(mode==="live"){
+      const res=await api({action:"start",practising_nurse:true,first_submission_attested:true,quiz_version:QUIZ_VERSION});
+      session.submissionId=res.submission_id;
+      session.token=res.participant_token;
+    }
+    saveSession(session);
+    document.getElementById("startPanel").style.display="none";
+    document.getElementById("motvForm").style.display="block";
+    applySessionState(session);
+    document.querySelector('[data-question="q1"]')?.scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){
+    btn.disabled=false;btn.textContent="Start quiz";
+    err.textContent=e.message||"Could not start the quiz. Please try again.";
     err.classList.add("show");
   }
 }
-async function persistSubmission(submission){
-  if(LIVE_DASHBOARD_ENABLED){
-    const payload={
-      event_key:"rrc-2026-09-24",
-      practising_nurse:true,
-      first_submission_attested:true,
-      quiz_version:submission.version || "MOTV-LunchLearn-2026-09",
-      quiz_answers:submission.quiz || {},
-      device_validation:Object.fromEntries(Object.entries(submission.feedback?.device || {}).map(([key,value])=>{
-        if(value && typeof value === "object" && !Array.isArray(value) && "answer" in value){
-          const normalized = value.answer === "Yes" ? "yes" : value.answer === "No" ? "no" : value.answer === "It depends" ? "depends" : value.answer;
-          return [key,{...value,answer:normalized}];
-        }
-        return [key,value];
-      })),
-      course_feedback:submission.feedback?.course || null,
-      followup:{
-        name:submission.feedback?.contact?.name || "",
-        email:submission.feedback?.contact?.email || "",
-        discussion_notes:submission.feedback?.contact?.notes || "",
-        send_quiz_to_trainer:Boolean(submission.feedback?.contact?.includeQuizResults)
-      }
-    };
-    const r=await fetch(REMOTE_API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-    const responseBody=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(responseBody.error || "Remote submission failed");
-    submission.remoteSubmissionId=responseBody.submission_id || null;
-    return responseBody;
-  }
-  const list=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-  list.push(submission);
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(list));
+
+function readQuestionAnswer(q){
+  const name=`${q.id}${q.type==="multi"?"[]":""}`;
+  const selected=[...document.querySelectorAll(`[name="${name}"]:checked`)].map(x=>x.value);
+  return q.type==="single"?(selected[0]||null):selected;
 }
 
-function evaluateSubmission(submission){
-  const review=[];
-  const usedRefs=new Set();
-  for(const q of allQuestions()){
-    const raw=submission.quiz[q.id];
-    const selected=q.type==="single" ? (raw?[raw]:[]) : (Array.isArray(raw)?raw:[]);
+function answerIsPresent(q,answer){return q.type==="single"?Boolean(answer):Array.isArray(answer)&&answer.length>0}
 
-    if(q.type==="single"){
-      const chosen=q.options.find(o=>selected.includes(o.id));
-      if(chosen && chosen.grade==="wrong"){
-        chosen.refs.forEach(r=>usedRefs.add(r));
-        const correct=q.options.find(o=>o.grade==="correct");
-        review.push({kind:"missed",question:q.prompt,item:chosen.text,expected:correct?.text||"Incorrect",why:chosen.why,refs:chosen.refs});
-      }
-      continue;
-    }
+async function submitMainQuestion(qid){
+  const q=questionById(qid);
+  const session=getSession();
+  if(!q||!session) return;
+  if(session.lockedAnswers?.[qid]!==undefined) return;
 
-    for(const o of q.options){
-      if(o.confidence || o.grade==="partial") continue;
-      const isSelected=selected.includes(o.id);
-      if(o.grade==="wrong" && isSelected){
-        o.refs.forEach(r=>usedRefs.add(r));
-        review.push({kind:"missed",question:q.prompt,item:o.text,expected:"Should not be selected",why:o.why,refs:o.refs});
-      }
-      if(o.grade==="correct" && !isSelected){
-        o.refs.forEach(r=>usedRefs.add(r));
-        review.push({kind:"missed",question:q.prompt,item:o.text,expected:"Should be selected",why:o.why,refs:o.refs});
-      }
+  const answer=readQuestionAnswer(q);
+  const status=document.getElementById(`status_${qid}`);
+  if(!answerIsPresent(q,answer)){
+    status.textContent="Please choose at least one answer.";
+    status.className="question-status error-inline";
+    return;
+  }
+
+  const btn=document.querySelector(`[data-submit-question="${qid}"]`);
+  btn.disabled=true;btn.textContent="Submitting…";
+  status.textContent="";
+  try{
+    if(session.mode==="live"){
+      await api({action:"question",submission_id:session.submissionId,participant_token:session.token,question_id:qid,answer});
     }
+    session.lockedAnswers={...(session.lockedAnswers||{}),[qid]:answer};
+    saveSession(session);
+    lockQuestionCard(qid,answer,true);
+    applyFlowVisibility(session);
+    const next=nextMainId(qid);
+    const target=next?document.querySelector(`[data-question="${next}"]`):document.querySelector('[data-first-question="q6a"]');
+    setTimeout(()=>target?.scrollIntoView({behavior:"smooth",block:"start"}),180);
+  }catch(e){
+    btn.disabled=false;btn.textContent="Submit answer";
+    status.textContent=e.message||"Could not save this answer. Please try again.";
+    status.className="question-status error-inline";
+  }
+}
+
+function nextMainId(qid){const i=MAIN_IDS.indexOf(qid);return i>=0&&i<MAIN_IDS.length-1?MAIN_IDS[i+1]:null}
+
+function lockQuestionCard(qid,answer,showFeedback){
+  const q=questionById(qid);
+  const card=document.querySelector(`[data-question="${qid}"]`);
+  if(!q||!card) return;
+  const chosen=q.type==="single"?[answer]:answer;
+  card.querySelectorAll("input").forEach(input=>{
+    input.checked=chosen.includes(input.value);
+    input.disabled=true;
+  });
+  card.classList.add("locked-question");
+  const btn=card.querySelector(".question-submit");
+  if(btn){btn.disabled=true;btn.textContent="Answer submitted"}
+  const status=document.getElementById(`status_${qid}`);
+  if(status){status.textContent="Locked";status.className="question-status locked-status"}
+  if(showFeedback) renderQuestionFeedback(qid,answer);
+  syncSelectedStyles();
+}
+
+function evaluateQuestion(q,raw){
+  const review=[];const usedRefs=new Set();
+  const selected=q.type==="single"?(raw?[raw]:[]):(Array.isArray(raw)?raw:[]);
+  if(q.type==="single"){
+    const chosen=q.options.find(o=>selected.includes(o.id));
+    if(chosen&&chosen.grade==="wrong"){
+      chosen.refs.forEach(r=>usedRefs.add(r));
+      const correct=q.options.find(o=>o.grade==="correct");
+      review.push({question:q.prompt,item:chosen.text,expected:correct?.text||"Incorrect",why:chosen.why,refs:chosen.refs});
+    }
+    return {review,usedRefs:[...usedRefs]};
+  }
+  for(const o of q.options){
+    if(o.confidence||o.grade==="partial") continue;
+    const isSelected=selected.includes(o.id);
+    if(o.grade==="wrong"&&isSelected){o.refs.forEach(r=>usedRefs.add(r));review.push({question:q.prompt,item:o.text,expected:"Should not be selected",why:o.why,refs:o.refs})}
+    if(o.grade==="correct"&&!isSelected){o.refs.forEach(r=>usedRefs.add(r));review.push({question:q.prompt,item:o.text,expected:"Should be selected",why:o.why,refs:o.refs})}
   }
   return {review,usedRefs:[...usedRefs]};
 }
 
-function printLearning(){
-  // Called directly from the participant's click so browsers allow the native print dialog.
-  document.body.classList.add("printing-learning");
-  window.print();
+function renderQuestionFeedback(qid,answer){
+  // Q1-Q5 reveal their learning immediately after the answer is locked.
+  // True/False never calls this function; those answers remain unrevealed until final submission.
+  const q=questionById(qid);const box=document.getElementById(`feedback_${qid}`);if(!q||!box)return;
+  const {review,usedRefs}=evaluateQuestion(q,answer);
+  if(!review.length){box.innerHTML=`<div class="feedback-ok"><strong>Answer locked.</strong> No corrections needed.</div>`;box.classList.add("show");return}
+  box.innerHTML=`<div class="feedback-title">Answer locked — review</div>${review.map(renderReviewItem).join("")}${usedRefs.length?`<div class="mini-refs"><strong>References:</strong> ${esc(shortRefs(usedRefs))}</div>`:""}`;
+  box.classList.add("show");
 }
 
-window.addEventListener("afterprint",()=>{
-  document.body.classList.remove("printing-learning");
-});
+function applySessionState(session){
+  for(const qid of MAIN_IDS){
+    if(session?.lockedAnswers && Object.prototype.hasOwnProperty.call(session.lockedAnswers,qid)) lockQuestionCard(qid,session.lockedAnswers[qid],true);
+  }
+  applyFlowVisibility(session);
+  const btn=document.getElementById("finalSubmitBtn");
+  if(btn) btn.textContent=session?.mode==="practice"?"See my results":"Submit & see my results";
+}
+
+function applyFlowVisibility(session){
+  const started=Boolean(session);
+  const locked=session?.lockedAnswers||{};
+  for(let i=0;i<MAIN_IDS.length;i++){
+    const qid=MAIN_IDS[i];
+    const wrapper=document.querySelector(`.quiz-section[data-first-question="${qid}"]`);
+    const visible=started && (i===0 || Object.prototype.hasOwnProperty.call(locked,MAIN_IDS[i-1]));
+    if(wrapper) wrapper.style.display=visible?"block":"none";
+  }
+  const tfWrapper=document.querySelector('.quiz-section[data-first-question="q6a"]');
+  const mainComplete=MAIN_IDS.every(id=>Object.prototype.hasOwnProperty.call(locked,id));
+  if(tfWrapper) tfWrapper.style.display=started&&mainComplete?"block":"none";
+  const after=document.getElementById("afterMainArea");
+  if(after) after.style.display=started&&mainComplete?"block":"none";
+}
+
+async function recoverRemoteStatus(session){
+  try{
+    const res=await api({action:"status",submission_id:session.submissionId,participant_token:session.token});
+    const serverAnswers=res.quiz_answers||{};
+    for(const id of MAIN_IDS){if(Object.prototype.hasOwnProperty.call(serverAnswers,id)) session.lockedAnswers[id]=serverAnswers[id]}
+    saveSession(session);
+    applySessionState(session);
+    if(res.completed_at){
+      const submission={submittedAt:res.completed_at,version:QUIZ_VERSION,nurseAcknowledged:true,resultsOnly:false,quiz:serverAnswers,feedback:{course:{},device:{},contact:{}}};
+      localStorage.setItem(COMPLETED_KEY,"true");
+      localStorage.setItem(EVER_SUBMITTED_KEY,"true");
+      localStorage.setItem(LAST_SUBMISSION_KEY,JSON.stringify(submission));
+      renderPostSubmit(submission,true,false);
+    }
+  }catch{/* local locked state remains usable */}
+}
+
+function optionalFieldIds(){return [...optionalFeedback.course,...optionalFeedback.device].filter(x=>x.type==="ynid").map(x=>x.id)}
+function syncSelectedStyles(){document.querySelectorAll("label.option").forEach(l=>l.classList.toggle("selected",Boolean(l.querySelector("input")?.checked)))}
+
+function collectFeedback(){
+  const readRadio=id=>document.querySelector(`[name="${id}"]:checked`)?.value||null;
+  const course={},device={};
+  for(const f of optionalFeedback.course) course[f.id]=f.type==="text"?(document.getElementById(f.id)?.value.trim()||""):{answer:readRadio(f.id),notes:document.getElementById(`${f.id}_notes`)?.value.trim()||""};
+  for(const f of optionalFeedback.device) device[f.id]=f.type==="text"?(document.getElementById(f.id)?.value.trim()||""):{answer:readRadio(f.id),notes:document.getElementById(`${f.id}_notes`)?.value.trim()||""};
+  return {course,device,contact:{name:document.getElementById("contact_name")?.value.trim()||"",email:document.getElementById("contact_email")?.value.trim()||"",notes:document.getElementById("contact_notes")?.value.trim()||"",includeQuizResults:Boolean(document.getElementById("share_quiz_results")?.checked)}};
+}
+
+function collectTfAnswers(){
+  const out={};
+  for(const id of TF_IDS) out[id]=document.querySelector(`[name="${id}"]:checked`)?.value||null;
+  return out;
+}
+
+function normalizeDevice(device){
+  return Object.fromEntries(Object.entries(device||{}).map(([key,value])=>{
+    if(value&&typeof value==="object"&&!Array.isArray(value)&&"answer" in value){
+      const answer=value.answer==="Yes"?"yes":value.answer==="No"?"no":value.answer==="It depends"?"depends":value.answer;
+      return [key,{...value,answer}];
+    }
+    return [key,value];
+  }));
+}
+
+async function finalizeQuiz(){
+  const session=getSession();if(!session)return;
+  const err=document.getElementById("formError");err.classList.remove("show");
+  if(!MAIN_IDS.every(id=>Object.prototype.hasOwnProperty.call(session.lockedAnswers||{},id))){err.textContent="Please submit Questions 1–5 first.";err.classList.add("show");return}
+  const tf=collectTfAnswers();
+  const missing=TF_IDS.filter(id=>!tf[id]);
+  if(missing.length){err.textContent=`Please answer all ${missing.length} remaining True/False question${missing.length===1?"":"s"} before viewing your results.`;err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});return}
+  const feedback=collectFeedback();
+  if(feedback.contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(feedback.contact.email)){err.textContent="Please enter a valid email address, or leave the optional email field blank.";err.classList.add("show");return}
+
+  const submission={submittedAt:new Date().toISOString(),version:QUIZ_VERSION,nurseAcknowledged:session.mode==="live",resultsOnly:session.mode==="practice",quiz:{...(session.lockedAnswers||{}),...tf},feedback};
+  const btn=document.getElementById("finalSubmitBtn");btn.disabled=true;btn.textContent=session.mode==="practice"?"Preparing results…":"Submitting…";
+  try{
+    if(session.mode==="live"){
+      await api({
+        action:"finalize",
+        submission_id:session.submissionId,
+        participant_token:session.token,
+        tf_answers:tf,
+        device_validation:normalizeDevice(feedback.device),
+        course_feedback:feedback.course,
+        followup:{name:feedback.contact.name,email:feedback.contact.email,discussion_notes:feedback.contact.notes,send_quiz_to_trainer:Boolean(feedback.contact.includeQuizResults)}
+      });
+      localStorage.setItem(EVER_SUBMITTED_KEY,"true");
+    }
+    session.completed=true;saveSession(session);
+    localStorage.setItem(COMPLETED_KEY,"true");
+    localStorage.setItem(LAST_SUBMISSION_KEY,JSON.stringify(submission));
+    renderPostSubmit(submission,false,session.mode==="practice");
+  }catch(e){
+    // If the network response was lost after the server finalized, recover the server state.
+    if(session.mode==="live"){
+      try{
+        const st=await api({action:"status",submission_id:session.submissionId,participant_token:session.token});
+        if(st.completed_at){
+          submission.quiz=st.quiz_answers||submission.quiz;
+          localStorage.setItem(EVER_SUBMITTED_KEY,"true");
+          localStorage.setItem(COMPLETED_KEY,"true");
+          localStorage.setItem(LAST_SUBMISSION_KEY,JSON.stringify(submission));
+          return renderPostSubmit(submission,false,false);
+        }
+      }catch{}
+    }
+    btn.disabled=false;btn.textContent=session.mode==="practice"?"See my results":"Submit & see my results";
+    err.textContent=e.message||"Your response could not be saved. Please check the connection and try again.";err.classList.add("show");
+  }
+}
+
+function evaluateSubmission(submission){
+  const review=[];const usedRefs=new Set();
+  for(const q of allQuestions()){
+    const {review:items,usedRefs:refs}=evaluateQuestion(q,submission.quiz?.[q.id]);
+    items.forEach(x=>review.push(x));refs.forEach(x=>usedRefs.add(x));
+  }
+  return {review,usedRefs:[...usedRefs]};
+}
+
+function renderReviewItem(x){
+  return `<article class="review-item missed"><div class="review-label">Review</div><div class="small">${esc(x.question)}</div><div class="review-title">${esc(x.item)} <span class="status incorrect">${esc(x.expected)}</span></div><p class="why">${esc(x.why)}</p><div class="small"><strong>Reference:</strong> ${esc(shortRefs(x.refs))}</div></article>`;
+}
+
+function printLearning(){document.body.classList.add("printing-learning");window.print()}
+window.addEventListener("afterprint",()=>document.body.classList.remove("printing-learning"));
 
 function startAgain(){
-  // Start a fresh attempt without deleting the record that this browser has already submitted once.
   localStorage.removeItem(COMPLETED_KEY);
   localStorage.removeItem(LAST_SUBMISSION_KEY);
-  renderParticipant();
-  window.scrollTo({top:0,behavior:"auto"});
+  clearSession();
+  renderParticipant();window.scrollTo({top:0,behavior:"auto"});
 }
 
 function renderPostSubmit(submission,fromReload,resultsOnly=false){
   const {review,usedRefs}=evaluateSubmission(submission);
-  const misses=review;
   app.innerHTML=`
-    <header class="hero">
-      <div class="eyebrow">Making Oxygen Therapy Visible™</div>
-      <h1>${resultsOnly ? "Your results" : "Responses submitted"}</h1>
-      <p>${resultsOnly ? "This attempt was not submitted, saved, or sent anywhere. " : "Your submitted responses are now locked. "}Below you’ll see only the answers that need correction.</p>
-    </header>
+    <header class="hero"><div class="eyebrow">Making Oxygen Therapy Visible™</div><h1>${resultsOnly?"Your results":"Responses submitted"}</h1><p>${resultsOnly?"This attempt was not submitted, saved, or sent anywhere. ":"Your submitted responses are now locked. "}Below you’ll see only the answers that need correction.</p></header>
     <section class="review-panel">
-      <div class="review-summary"><strong>${misses.length===0 ? "No incorrect answers to review." : `${misses.length} answer${misses.length===1?"":"s"} to review.`}</strong></div>
-      ${misses.length ? `<h2>Review</h2>${misses.map(renderReviewItem).join("")}` : ""}
-      ${usedRefs.length ? `<div class="refs"><h3>References used in your review</h3><ol>${usedRefs.map(id=>`<li><strong>${esc(references[id]?.short||id)}.</strong> ${esc(references[id]?.full||"")}</li>`).join("")}</ol></div>` : ""}
-      <div class="actions" style="margin-top:26px">
-        <a class="btn btn-primary btn-link" href="https://www.conservemed.com/nurse-training" target="_blank" rel="noopener">Book 45-minute personalized nurse training</a>
-        <button class="btn btn-secondary" type="button" onclick="printLearning()">Print my learning</button>
-        <button class="btn btn-secondary" type="button" onclick="startAgain()">Start again</button>
-      </div>
-      ${resultsOnly ? "" : `<div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line)">
-        <a href="results.html" target="_blank" rel="noopener"><strong>View results from all participating nurses →</strong></a>
-      </div>`}
+      <div class="review-summary"><strong>${review.length===0?"No incorrect answers to review.":`${review.length} answer${review.length===1?"":"s"} to review.`}</strong></div>
+      ${review.length?`<h2>Review</h2>${review.map(renderReviewItem).join("")}`:""}
+      ${usedRefs.length?`<div class="refs"><h3>References used in your review</h3><ol>${usedRefs.map(id=>`<li><strong>${esc(references[id]?.short||id)}.</strong> ${esc(references[id]?.full||"")}</li>`).join("")}</ol></div>`:""}
+      <div class="actions" style="margin-top:26px"><a class="btn btn-primary btn-link" href="https://www.conservemed.com/nurse-training" target="_blank" rel="noopener">Book 45-minute personalized nurse training</a><button class="btn btn-secondary" type="button" onclick="printLearning()">Print my learning</button><button class="btn btn-secondary" type="button" onclick="startAgain()">Start again</button></div>
+      ${resultsOnly?"":`<div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line)"><a href="results.html" target="_blank" rel="noopener"><strong>View results from all participating nurses →</strong></a></div>`}
     </section>
-    <div class="notice"><strong>${resultsOnly ? "Learning mode." : "Thank you."}</strong> ${resultsOnly ? "Nothing from this attempt was saved or sent." : (LIVE_DASHBOARD_ENABLED ? "Your submitted responses are included in the live dashboard." : "This copy is running in local testing mode. Your submission was saved in this browser only.")}</div>
-  `;
+    <div class="notice"><strong>${resultsOnly?"Learning mode.":"Thank you."}</strong> ${resultsOnly?"Nothing from this attempt was saved or sent.":"Your submitted responses are included in the live dashboard."}</div>`;
   window.scrollTo({top:0,behavior:fromReload?"auto":"smooth"});
 }
 
-function renderReviewItem(x){
-  return `<article class="review-item missed">
-    <div class="review-label">Review</div>
-    <div class="small">${esc(x.question)}</div>
-    <div class="review-title">${esc(x.item)} <span class="status incorrect">${esc(x.expected)}</span></div>
-    <p class="why">${esc(x.why)}</p>
-    <div class="small"><strong>Reference:</strong> ${esc(shortRefs(x.refs))}</div>
-  </article>`;
-}
+renderParticipant();
 
-async function getSubmissions(){
-  // The production aggregate dashboard uses its own read-only endpoint.
-  // This embedded presenter view remains a local-development helper only.
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-}
-async function renderDashboard(){
-  app.innerHTML=`<header class="hero"><div class="eyebrow">Presenter view</div><h1>MOTV Live Dashboard</h1><p>Aggregate quiz selections and optional feedback.</p></header><div id="dashBody"><div class="notice">Loading…</div></div>`;
-  try{
-    const subs=await getSubmissions();
-    const body=document.getElementById("dashBody");
-    const mode="Local development dashboard only — production results use the separate aggregate dashboard.";
-    let html=`<div class="mode-banner"><strong>${mode}</strong></div>
-      <div class="dashboard-grid"><div class="metric"><div class="n">${subs.length}</div><div class="lab">Submitted responses</div></div><div class="metric"><div class="n">${contactCount(subs)}</div><div class="lab">Requested follow-up</div></div><div class="metric"><div class="n">${deviceUseYes(subs)}</div><div class="lab">“Would use Conserve Tree” — Yes</div></div></div>
-      <div class="actions"><button class="btn btn-secondary" id="refreshDash">Refresh dashboard</button></div>`;
-    for(const q of allQuestions()) html+=renderDashboardQuestion(q,subs);
-    html+=renderFeedbackDashboard(subs);
-    body.innerHTML=html;
-    document.getElementById("refreshDash")?.addEventListener("click",renderDashboard);
-  }catch(e){document.getElementById("dashBody").innerHTML=`<div class="error show">Could not load dashboard data.</div>`}
-}
-function contactCount(subs){return subs.filter(s=>s.feedback?.contact?.email||s.feedback?.contact?.name||s.feedback?.contact?.notes||s.feedback?.contact?.includeQuizResults).length}
-function deviceUseYes(subs){return subs.filter(s=>s.feedback?.device?.would_use?.answer==="Yes").length}
-function renderDashboardQuestion(q,subs){
-  const denom=subs.length||1;
-  const rows=q.options.filter(o=>!o.confidence).map(o=>{
-    const count=subs.filter(s=>{
-      const r=s.quiz?.[q.id];
-      return Array.isArray(r)?r.includes(o.id):r===o.id;
-    }).length;
-    const pct=Math.round((count/denom)*100);
-    return `<div class="bar-row"><div class="bar-label"><span>${esc(o.text)}</span><strong>${count} (${pct}%)</strong></div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
-  }).join("");
-  return `<section class="dashboard-card"><h3>${esc(q.prompt)}</h3>${rows}</section>`;
-}
-function renderFeedbackDashboard(subs){
-  const ynFields=[...optionalFeedback.course,...optionalFeedback.device].filter(f=>f.type==="ynid");
-  let html=`<div class="section-heading"><h2>Optional feedback</h2><p>Only submitted optional responses are counted.</p></div>`;
-  for(const f of ynFields){
-    const answers=subs.map(s=>s.feedback?.course?.[f.id]?.answer ?? s.feedback?.device?.[f.id]?.answer).filter(Boolean);
-    const counts={"Yes":0,"No":0,"It depends":0};answers.forEach(a=>counts[a]=(counts[a]||0)+1);
-    const denom=answers.length||1;
-    html+=`<section class="dashboard-card"><h3>${esc(f.label)}</h3>${Object.entries(counts).map(([k,v])=>`<div class="bar-row"><div class="bar-label"><span>${k}</span><strong>${v} (${Math.round(v/denom*100)}%)</strong></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/denom*100)}%"></div></div></div>`).join("")}</section>`;
-  }
-  const textComments=[];
-  for(const s of subs){
-    for(const f of optionalFeedback.course){
-      const val=s.feedback?.course?.[f.id];
-      if(typeof val==="string"&&val.trim()) textComments.push({label:f.label,text:val.trim()});
-      else if(val?.notes) textComments.push({label:f.label,text:val.notes});
-    }
-    for(const f of optionalFeedback.device){
-      const val=s.feedback?.device?.[f.id];
-      if(typeof val==="string"&&val.trim()) textComments.push({label:f.label,text:val.trim()});
-      else if(val?.notes) textComments.push({label:f.label,text:val.notes});
-    }
-  }
-  html+=`<section class="dashboard-card"><h3>Written feedback</h3>${textComments.length?textComments.map(c=>`<div class="comment"><span class="tag">${esc(c.label)}</span><div style="margin-top:5px">${esc(c.text)}</div></div>`).join(""):"<div class='small'>No written comments yet.</div>"}</section>`;
-  const contacts=subs.filter(s=>s.feedback?.contact?.name||s.feedback?.contact?.email||s.feedback?.contact?.notes||s.feedback?.contact?.includeQuizResults).map(s=>s.feedback.contact);
-  html+=`<section class="dashboard-card"><h3>Requested follow-up</h3>${contacts.length?contacts.map(c=>`<div class="comment"><strong>${esc(c.name||"Name not provided")}</strong>${c.email?` — ${esc(c.email)}`:""}${c.notes?`<div style="margin-top:5px">${esc(c.notes)}</div>`:""}${c.includeQuizResults?`<div style="margin-top:5px"><span class="tag">Include quiz results</span></div>`:""}</div>`).join(""):"<div class='small'>No follow-up requests yet.</div>"}</section>`;
-  return html;
-}
-
-if(isDashboard) renderDashboard(); else renderParticipant();
 </script>
 </body>
 </html>
