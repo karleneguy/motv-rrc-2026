@@ -339,6 +339,7 @@ const quizSections = [
         {id:"co",text:"May be misleading in abnormal haemoglobin states",grade:"correct",why:"Conventional pulse oximetry cannot reliably distinguish some abnormal haemoglobin species and can therefore produce misleadingly reassuring readings.",refs:["pretto2014"]},
         {id:"skin",text:"May read falsely high in some people with darker skin",grade:"correct",why:"Studies have found greater risk of pulse oximetry overestimating arterial saturation in some patients with darker skin pigmentation. Performance varies by device and circumstance.",refs:["sjoding2020","fawzy2022"]},
         {id:"stale",text:"Values may be delayed, held or stale when the signal is poor or lost",grade:"correct",why:"Signal averaging and signal loss can mean a displayed value does not fully reflect the patient’s current condition.",refs:["pretto2014","fda2025"]},
+        {id:"unreliable_on_o2",text:"Pulse oximetry is less reliable in a patient receiving supplemental oxygen",grade:"wrong",why:"Supplemental oxygen does not inherently make the pulse oximeter less accurate. The concern is that a reassuring SpO₂ can persist despite worsening ventilation or respiratory depression, so SpO₂ must be interpreted alongside the patient’s overall respiratory assessment.",refs:["pretto2014","khanna2020"]},
         {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
       ],}]
   },
@@ -673,7 +674,7 @@ async function submitMainQuestion(qid){
     }
     session.lockedAnswers={...(session.lockedAnswers||{}),[qid]:answer};
     saveSession(session);
-    lockQuestionCard(qid,answer,true);
+    lockQuestionCard(qid,answer,false);
     applyFlowVisibility(session);
     const next=nextMainId(qid);
     const target=next?document.querySelector(`[data-question="${next}"]`):document.querySelector('[data-first-question="q6a"]');
@@ -727,8 +728,7 @@ function evaluateQuestion(q,raw){
 }
 
 function renderQuestionFeedback(qid,answer){
-  // Q1-Q5 reveal their learning immediately after the answer is locked.
-  // True/False never calls this function; those answers remain unrevealed until final submission.
+  // Retained for final-review rendering helpers only. Per-question learning is not revealed during the quiz.
   const q=questionById(qid);const box=document.getElementById(`feedback_${qid}`);if(!q||!box)return;
   const {review,usedRefs}=evaluateQuestion(q,answer);
   if(!review.length){box.innerHTML=`<div class="feedback-ok"><strong>Answer locked.</strong> No corrections needed.</div>`;box.classList.add("show");return}
@@ -738,7 +738,7 @@ function renderQuestionFeedback(qid,answer){
 
 function applySessionState(session){
   for(const qid of MAIN_IDS){
-    if(session?.lockedAnswers && Object.prototype.hasOwnProperty.call(session.lockedAnswers,qid)) lockQuestionCard(qid,session.lockedAnswers[qid],true);
+    if(session?.lockedAnswers && Object.prototype.hasOwnProperty.call(session.lockedAnswers,qid)) lockQuestionCard(qid,session.lockedAnswers[qid],false);
   }
   applyFlowVisibility(session);
   const btn=document.getElementById("finalSubmitBtn");
