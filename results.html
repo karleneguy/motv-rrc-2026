@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RRC Lunch & Learn — Live Results</title>
+<style>
+:root{
+  --bg:#f4f7f9;--card:#fff;--ink:#18232d;--muted:#657583;--line:#dde4e9;
+  --blue:#185b8f;--blue2:#2c7ba7;--blueSoft:#eaf3f9;--green:#217a57;--greenSoft:#eaf6ef;
+  --red:#b44343;--redSoft:#faecec;--gold:#9a6800;--goldSoft:#fff6da;--shadow:0 10px 30px rgba(20,45,65,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#eaf2f7 0,#f5f7f9 300px);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}
+.shell{max-width:1240px;margin:0 auto;padding:28px 18px 64px}
+.hero{background:linear-gradient(135deg,#123e62,#1b6c9b);color:#fff;border-radius:24px;padding:28px 30px;box-shadow:var(--shadow);display:flex;justify-content:space-between;gap:20px;align-items:flex-end}
+.hero h1{margin:6px 0 10px;font-size:clamp(1.9rem,4vw,3rem);line-height:1.05}.hero p{margin:0;opacity:.9}.hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.hero-pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.23);padding:7px 10px;border-radius:999px;font-size:.86rem;font-weight:750}.eyebrow{text-transform:uppercase;letter-spacing:.09em;font-size:.77rem;font-weight:850;opacity:.8}.demo{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:8px 11px;border-radius:999px;font-weight:750;white-space:nowrap}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}.metric,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.metric{padding:18px}.metric .n{font-size:2rem;font-weight:900;line-height:1}.metric .lab{color:var(--muted);margin-top:6px;font-size:.9rem}.metric.highlight{background:var(--greenSoft);border-color:#cbe7d7}.metric.highlight .n{color:var(--green)}
+.section{margin-top:30px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:12px}.section h2{margin:0;font-size:1.45rem}.section-note{color:var(--muted);font-size:.9rem;text-align:right}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{padding:20px}.card h3{margin:0 0 8px;font-size:1.05rem}.subtle{color:var(--muted);font-size:.86rem;margin:0 0 14px}.bigstat{font-size:2.4rem;font-weight:900;line-height:1;color:var(--green)}.bigstat.bad{color:var(--red)}.bigstat.blue{color:var(--blue)}.statlabel{font-weight:800;margin-top:8px}.statnote{color:var(--muted);font-size:.86rem;margin-top:6px}
+.toplist{display:grid;gap:12px;margin-top:8px}.item{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:12px;align-items:center}.item .label{font-weight:650;font-size:.91rem}.item strong{text-align:right}.bar{height:9px;background:#edf1f4;border-radius:99px;overflow:hidden;margin-top:6px}.fill-red{height:100%;background:var(--red);border-radius:99px}.fill-green{height:100%;background:var(--green);border-radius:99px}.fill-blue{height:100%;background:var(--blue2);border-radius:99px}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.73rem;font-weight:850;margin-left:7px;vertical-align:1px}.badge.true{background:var(--greenSoft);color:var(--green)}.badge.false{background:var(--redSoft);color:var(--red)}
+.tf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.tf-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);min-height:165px;display:flex;flex-direction:column;justify-content:space-between}.tf-card .q{font-weight:700;font-size:.93rem}.tf-card .big{font-size:2rem;font-weight:900;color:var(--red);line-height:1}.tf-card .small{color:var(--muted);font-size:.82rem}.tf-card.celebrate{background:linear-gradient(135deg,#eaf7ef,#f7fcf9);border-color:#bfe2ce}.tf-card.celebrate .big{color:var(--green)}
+.validation{display:grid;gap:16px}.validation-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}.validation-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}.validation-head strong{font-size:.96rem}.nresp{color:var(--muted);font-size:.82rem;white-space:nowrap}.stack{height:15px;border-radius:99px;overflow:hidden;display:flex;background:#edf1f4}.yes{background:var(--green)}.depends{background:#d9aa3f}.no{background:#d87a7a}.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;font-size:.84rem;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.dot.y{background:var(--green)}.dot.d{background:#d9aa3f}.dot.n{background:#d87a7a}
+.validation-total{margin-top:16px;text-align:right;color:var(--muted);font-size:.9rem}.validation-total strong{color:var(--ink);font-size:1.15rem}.footer-note{margin-top:26px;color:var(--muted);font-size:.82rem;text-align:center}
+@media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.grid2,.grid3{grid-template-columns:1fr}.tf-grid{grid-template-columns:1fr 1fr}.hero{align-items:flex-start;flex-direction:column}}
+@media(max-width:600px){.metrics{grid-template-columns:1fr}.tf-grid{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}.section-note{text-align:left}.hero{padding:24px}.shell{padding:18px 12px 50px}}
+</style>
+<style>
+.live-pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:8px 11px;border-radius:999px;font-weight:750;white-space:nowrap}
+.error-box{background:#fff;border:1px solid #e0b4b4;color:#8d2f2f;border-radius:16px;padding:18px;margin-top:18px}
+.loading{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:18px;text-align:center;color:var(--muted)}
+.refresh-row{display:flex;justify-content:flex-end;margin-top:16px}
+.refresh-btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:8px 12px;font-weight:750;cursor:pointer}
+.refresh-btn:hover{background:#f8fafb}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Making Oxygen Therapy Visible™</div>
+      <h1>RRC Lunch &amp; Learn — September 24, 2026</h1>
+      <div class="hero-meta">
+        <span class="hero-pill" id="nurseCount">— nurses submitted</span>
+        <span class="hero-pill">Responses from September 24, 2026</span>
+      </div>
+    </div>
+    <div class="live-pill" id="liveStatus">Live dashboard</div>
+  </header>
+
+  <div id="dashboardBody"><div class="loading">Loading results…</div></div>
+  <div class="refresh-row"><button class="refresh-btn" id="refreshBtn" type="button">Refresh results</button></div>
+  <div class="footer-note" id="updatedAt"></div>
+</div>
+<script>
+const DASHBOARD_API_URL = "https://agctxecwjdoypavqlbya.supabase.co/functions/v1/motv-dashboard";
+
+const labels = {
+  q1: {
+    anxiety:"Anxiety/hyperventilation with normal SpO₂",
+    copd:"COPD exacerbation with normal SpO₂",
+    hypovent:"Hypoventilation with normal SpO₂",
+    pneumonia:"Pneumonia with normal SpO₂",
+    dyspnea:"Shortness of breath/dyspnea with normal SpO₂",
+    prevent:"To prevent possible desaturation if a patient deteriorates"
+  },
+  q2: {
+    co2:"CO₂ level on a blood gas",
+    rr:"Respiratory rate",
+    sob:"Shortness of breath / Dyspnea"
+  },
+  q3: {
+    false_reassurance:"A normal SpO₂ can create false reassurance that overall respiratory status is stable",
+    tissue:"A normal SpO₂ does not guarantee adequate oxygen delivery to the tissues",
+    signal_factors:"Movement, shivering, poor circulation, sensor position and other factors can affect the reading",
+    paO2:"Does not show how high PaO₂ is once saturation is near 100%",
+    flowing:"Does not tell whether oxygen is actually flowing or connected properly",
+    intermittent:"Intermittent checks can miss changes between assessments",
+    co:"May be misleading in abnormal haemoglobin states",
+    skin:"May read falsely high in some people with darker skin",
+    stale:"Values may be delayed, held or stale when the signal is poor or lost"
+  },
+  q5: {
+    breathing:"Breathing pattern, depth and inspiratory demand",
+    fit:"Fit and position of the mask or nasal cannula",
+    tubing:"Leaks, kinks or disconnections in tubing",
+    flow:"Oxygen flow rate",
+    device:"Type of oxygen delivery device",
+    source:"Type of oxygen source",
+    source_on:"Whether the oxygen source is turned on and has adequate supply"
+  },
+  tf: {
+    q6a:{text:"The higher the SpO₂, the better.",answer:"False"},
+    q6b:{text:"Nurses should be cautious about giving oxygen to patients with COPD because it suppresses their hypoxic drive.",answer:"False"},
+    q6c:{text:"A stable patient with a stable SpO₂ should continue on the same oxygen flow.",answer:"False"},
+    q6d:{text:"Respiratory rate is less important to measure accurately if the patient’s SpO₂ is stable.",answer:"False"},
+    q6f:{text:"It is okay to leave oxygen running when it is not being used by the patient.",answer:"False"},
+    q6e:{text:"Improving global access to medical oxygen requires nurses to be involved in how oxygen is used, implemented and managed.",answer:"True"}
+  },
+  validation: {
+    delivery_visible:"A device that makes interruptions in oxygen delivery more visible would be useful in my nursing practice.",
+    rr_objective:"A device that provides objective information about respiratory rate would be useful in my nursing practice.",
+    earlier_awareness:"A device that alerts me to an unexpected change in oxygen delivery or respiratory rate could help me assess or respond to a patient sooner.",
+    would_use:"If Conserve Tree™ were available on my unit, I would use it."
+  }
+};
+
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const clamp = n => Math.max(0,Math.min(100,Number(n)||0));
+
+function topList(items,map,kind="red"){
+  if(!items?.length) return `<div class="subtle">No responses yet.</div>`;
+  const klass=kind==="green"?"fill-green":"fill-red";
+  const color=kind==="green"?"var(--green)":"var(--red)";
+  return `<div class="toplist">${items.map(x=>{const pct=clamp(x.percentage);return `<div class="item"><div><div class="label">${esc(map[x.id]||x.id)}</div><div class="bar"><div class="${klass}" style="width:${pct}%"></div></div></div><strong style="color:${color}">${pct}%</strong></div>`}).join("")}</div>`;
+}
+
+function tfCards(items){
+  const byId=Object.fromEntries((items||[]).map(x=>[x.id,x]));
+  const order=["q6a","q6b","q6c","q6d","q6f","q6e"];
+  return order.map(id=>{
+    const meta=labels.tf[id]; const d=byId[id]||{correct_percentage:0,incorrect_percentage:0};
+    const positive=id==="q6e";
+    const pct=positive?clamp(d.correct_percentage):clamp(d.incorrect_percentage);
+    return `<div class="tf-card ${positive?"celebrate":""}"><div class="q">${esc(meta.text)} <span class="badge ${meta.answer==="True"?"true":"false"}">${meta.answer}</span></div><div><div class="big">${pct}%</div><div class="small">${positive?"answered correctly":"answered incorrectly"}</div></div></div>`;
+  }).join("");
+}
+
+function validationCard(id,d){
+  const yes=clamp(d?.yes_percentage), dep=clamp(d?.depends_percentage), no=clamp(d?.no_percentage), n=Number(d?.n)||0;
+  return `<div class="validation-card"><div class="validation-head"><strong>${esc(labels.validation[id])}</strong><span class="nresp">n = ${n}</span></div><div class="stack"><span class="yes" style="width:${yes}%"></span><span class="depends" style="width:${dep}%"></span><span class="no" style="width:${no}%"></span></div><div class="legend"><span><i class="dot y"></i>Yes ${yes}%</span><span><i class="dot d"></i>It depends ${dep}%</span><span><i class="dot n"></i>No ${no}%</span></div></div>`;
+}
+
+function render(d){
+  document.getElementById("nurseCount").textContent=`${d.nurses_submitted ?? 0} nurses submitted`;
+  const q1=d.question_1||{}, q2=d.question_2||{}, q3=d.question_3||{}, q5=d.oxygen_delivery||{};
+  const validation=d.device_validation||{questions:{},respondents:0};
+  document.getElementById("dashboardBody").innerHTML=`
+  <section class="section">
+    <div class="section-head"><h2>1. Oxygen indications</h2></div>
+    <div class="grid2">
+      <div class="card"><div class="bigstat">${clamp(q1.hypoxaemia_correct_percentage)}%</div><div class="statlabel">correctly identified hypoxaemia</div><div class="statnote">Hypoxaemia is the main indication for supplemental oxygen in routine acute-care use.</div></div>
+      <div class="card"><div class="bigstat bad">${clamp(q1.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">selected at least one incorrect answer or marked “I’m not confident”</div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Top 3 incorrect selections</h3>${topList(q1.top_incorrect,labels.q1)}</div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>2. Identifying hypoxaemia</h2></div>
+    <div class="grid3">
+      <div class="card"><h3>Pulse oximetry (SpO₂)</h3><div class="bigstat">${clamp(q2.pulse_ox_correct_percentage)}%</div><div class="statlabel">correctly identified</div><div class="statnote">The routine non-invasive method used to identify and monitor hypoxaemia.</div></div>
+      <div class="card"><h3>Arterial blood gas</h3><div class="bigstat">${clamp(q2.abg_correct_percentage)}%</div><div class="statlabel">correctly identified</div><div class="statnote">Provides direct arterial oxygenation information when more precise assessment is needed.</div></div>
+      <div class="card"><div class="bigstat bad">${clamp(q2.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">selected at least one incorrect answer or marked “I’m not confident”</div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Top 3 incorrect selections</h3>${topList(q2.top_incorrect,labels.q2)}</div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>3. Pulse oximetry limitations</h2><div class="section-note">The following are the pulse oximetry limitations nurses missed most often. Percentages show how many nurses did not recognize each limitation.</div></div>
+    <div class="grid3" style="margin-bottom:16px"><div class="card"><div class="bigstat bad">${clamp(q3.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">missed at least one correct answer or marked “I’m not confident”</div></div></div>
+    <div class="card">${topList(q3.most_overlooked,labels.q3)}</div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>4. Oxygen delivery</h2><div class="section-note">The following are the factors nurses most often recognized as influencing how much oxygen a patient actually receives during care.</div></div>
+    <div class="grid3" style="margin-bottom:16px"><div class="card"><div class="bigstat bad">${clamp(q5.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">missed at least one correct answer or marked “I’m not confident”</div></div></div>
+    <div class="card">${topList(q5.most_recognized,labels.q5,"green")}</div>
+  </section>
+
+  <section class="section"><div class="section-head"><h2>True / False</h2></div><div class="tf-grid">${tfCards(d.true_false)}</div></section>
+
+  <section class="section">
+    <div class="section-head"><h2>Conserve Tree™ validation</h2></div>
+    <div class="validation">
+      ${validationCard("delivery_visible",validation.questions?.delivery_visible)}
+      ${validationCard("rr_objective",validation.questions?.rr_objective)}
+      ${validationCard("earlier_awareness",validation.questions?.earlier_awareness)}
+      ${validationCard("would_use",validation.questions?.would_use)}
+    </div>
+    <div class="validation-total"><strong>${validation.respondents ?? 0}</strong> device validation respondents</div>
+  </section>`;
+  document.getElementById("updatedAt").textContent=`Last refreshed ${new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`;
+}
+
+async function loadDashboard(){
+  const status=document.getElementById("liveStatus");
+  try{
+    status.textContent="Refreshing…";
+    const r=await fetch(`${DASHBOARD_API_URL}?_=${Date.now()}`,{method:"GET",cache:"no-store"});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||"Could not load results");
+    render(d);
+    status.textContent=`Live dashboard · ${d.nurses_submitted ?? 0} loaded`;
+  }catch(e){
+    status.textContent="Connection error";
+    document.getElementById("dashboardBody").innerHTML=`<div class="error-box"><strong>Could not load the live results.</strong><div style="margin-top:6px">${esc(e.message)}</div></div>`;
+  }
+}
+
+document.getElementById("refreshBtn").addEventListener("click",loadDashboard);
+loadDashboard();
+setInterval(loadDashboard,15000);
+</script>
+</body>
+</html>

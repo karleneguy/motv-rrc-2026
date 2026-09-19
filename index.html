@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Making Oxygen Therapy Visible™ Lunch & Learn interactive nursing education quiz and optional feedback.">
+<title>Making Oxygen Therapy Visible™ — Lunch & Learn</title>
+<style>
+  :root{
+    --bg:#f5f7fa;
+    --surface:#ffffff;
+    --surface-soft:#f9fbfc;
+    --ink:#17212b;
+    --muted:#617080;
+    --line:#d9e0e7;
+    --blue:#185b8f;
+    --blue-dark:#10456f;
+    --blue-soft:#eaf3f9;
+    --green:#1f7a55;
+    --green-soft:#eaf7f0;
+    --gold:#9a6800;
+    --gold-soft:#fff6d9;
+    --red:#ad2f2f;
+    --red-soft:#fff0f0;
+    --shadow:0 10px 30px rgba(22, 43, 64, .07);
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    color:var(--ink);
+    background:linear-gradient(180deg,#eef4f8 0,#f7f8fa 320px,#f7f8fa 100%);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.5;
+  }
+  button,input,textarea{font:inherit}
+  button{cursor:pointer}
+  a{color:var(--blue)}
+  .shell{max-width:980px;margin:0 auto;padding:28px 18px 64px}
+  .hero{
+    background:linear-gradient(135deg,#123e62,#1b6c9b);
+    color:#fff;
+    border-radius:24px;
+    padding:30px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+  }
+  .eyebrow{text-transform:uppercase;letter-spacing:.09em;font-size:.78rem;font-weight:800;opacity:.78}
+  h1{font-size:clamp(1.9rem,5vw,3rem);line-height:1.05;margin:8px 0 10px}
+  .hero p{margin:0;max-width:760px;font-size:1.03rem;opacity:.92}
+  .notice,.card,.optional-panel,.submit-panel,.review-panel,.dashboard-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  .notice{padding:16px 18px;margin:16px 0;color:#334555;background:#fbfdff}
+  .notice strong{color:var(--ink)}
+  .section-heading{margin:36px 0 12px}
+  .section-heading h2{font-size:1.55rem;margin:0 0 5px}
+  .section-heading p{margin:0;color:var(--muted)}
+  .card{padding:22px;margin:14px 0}
+  .qtop{display:flex;gap:14px;align-items:flex-start}
+  .qnum{
+    flex:0 0 auto;
+    width:34px;height:34px;border-radius:10px;
+    display:grid;place-items:center;
+    background:var(--blue-soft);color:var(--blue-dark);font-weight:850;
+  }
+  .qtext{font-size:1.16rem;font-weight:800;line-height:1.35;margin:2px 0 4px}
+  .qhint,.small{color:var(--muted);font-size:.91rem}
+  .scope-note{margin:14px 0;padding:13px 14px;border-left:4px solid var(--blue);background:var(--blue-soft);border-radius:10px;color:#28495e;font-size:.94rem}
+  .options{display:grid;gap:9px;margin-top:16px}
+  .option{
+    display:flex;gap:12px;align-items:flex-start;
+    border:1px solid var(--line);
+    border-radius:13px;
+    padding:12px 13px;
+    background:#fff;
+    transition:.15s ease;
+  }
+  .option:hover{border-color:#9eb4c5;background:#fcfeff}
+  .option.selected{border-color:#6c9fc1;background:#f2f8fc}
+  .option input{width:19px;height:19px;margin-top:2px;accent-color:var(--blue);flex:0 0 auto}
+  .option-text{font-weight:620}
+  .optional-panel{margin-top:30px;overflow:hidden}
+  .optional-head{padding:22px;background:#f0f6f8;border-bottom:1px solid var(--line)}
+  .optional-head h2{margin:0 0 6px;font-size:1.55rem}
+  .optional-head p{margin:0;color:#4f6473}
+  .optional-body{padding:22px}
+  .field-group{padding:18px 0;border-bottom:1px solid #edf0f3}
+  .field-group:last-child{border-bottom:0}
+  .field-label{font-weight:790;margin-bottom:9px;display:block}
+  .choice-row{display:flex;flex-wrap:wrap;gap:9px}
+  .choice-pill{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:#fff}
+  .choice-pill input{accent-color:var(--blue)}
+  textarea,input[type="text"],input[type="email"]{
+    width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:#fff;color:var(--ink);outline:none;
+  }
+  textarea{min-height:92px;resize:vertical}
+  textarea:focus,input[type="text"]:focus,input[type="email"]:focus{border-color:#70a5c8;box-shadow:0 0 0 3px rgba(24,91,143,.09)}
+  .conditional{display:none;margin-top:10px}
+  .conditional.show{display:block}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .submit-panel{padding:22px;margin-top:24px}
+  .ack{display:flex;gap:10px;align-items:flex-start;background:#f9fbfc;border:1px solid var(--line);border-radius:13px;padding:13px}
+  .ack input{width:20px;height:20px;margin-top:2px;accent-color:var(--blue)}
+  .lock-note{margin:12px 0;color:var(--muted);font-size:.9rem}
+  .error{display:none;color:var(--red);background:var(--red-soft);border:1px solid #efc2c2;border-radius:11px;padding:10px 12px;margin:12px 0;font-weight:650}
+  .error.show{display:block}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .btn{border:0;border-radius:11px;min-height:46px;padding:11px 17px;font-weight:800}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-primary:hover{background:var(--blue-dark)}
+  .btn-secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .hidden{display:none!important}
+  .review-panel{padding:24px;margin-top:20px}
+  .review-panel h2{margin-top:0}
+  .review-summary{background:var(--green-soft);border:1px solid #bfe3cf;border-radius:13px;padding:14px 15px;margin-bottom:18px}
+  .review-item{border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0;background:#fff}
+  .review-item.missed{border-left:5px solid var(--red)}
+  .review-item.nuance{border-left:5px solid var(--gold)}
+  .review-label{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;font-weight:850;color:var(--muted);margin-bottom:5px}
+  .review-title{font-weight:820;margin-bottom:5px}
+  .status{display:inline-block;border-radius:999px;padding:3px 8px;font-size:.77rem;font-weight:850;margin-left:6px}
+  .status.correct{background:var(--green-soft);color:var(--green)}
+  .status.depends{background:var(--gold-soft);color:var(--gold)}
+  .status.incorrect{background:var(--red-soft);color:var(--red)}
+  .why{margin:8px 0 0;color:#344755}
+  .refs{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+  .refs h3{margin:0 0 10px}
+  .refs ol{padding-left:22px}
+  .refs li{margin:8px 0;color:#3f5260}
+  .footer{color:var(--muted);font-size:.84rem;margin-top:22px;text-align:center}
+  .mode-banner{padding:11px 13px;background:var(--gold-soft);border:1px solid #ecd798;border-radius:11px;margin:0 0 18px;color:#644b10}
+  .dashboard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 20px}
+  .metric{padding:17px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+  .metric .n{font-size:1.7rem;font-weight:900}
+  .metric .lab{color:var(--muted);font-size:.85rem}
+  .dashboard-card{padding:20px;margin:14px 0}
+  .dashboard-card h3{margin:0 0 12px}
+  .bar-row{margin:10px 0}
+  .bar-label{display:flex;justify-content:space-between;gap:10px;font-size:.9rem;margin-bottom:4px}
+  .bar-bg{height:9px;background:#edf0f3;border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;background:var(--blue);border-radius:99px}
+  .comment{padding:10px 0;border-bottom:1px solid #edf0f3;color:#405462}
+  .comment:last-child{border-bottom:0}
+  .tag{display:inline-block;padding:2px 7px;border-radius:999px;background:#eef2f5;color:#526474;font-size:.75rem;font-weight:750}
+  @media print{
+    @page{margin:14mm}
+    body{background:#fff}
+    .shell{max-width:none;padding:0}
+    .actions,.footer,.notice,.mode-banner{display:none!important}
+    .hero{box-shadow:none;border:0;padding:0 0 14px;margin:0 0 12px;background:#fff;color:#000}
+    .hero .eyebrow,.hero p{color:#333}
+    .review-panel{box-shadow:none;border:0;padding:0;margin:0}
+    .review-item{break-inside:avoid;page-break-inside:avoid}
+    .refs li{break-inside:avoid;page-break-inside:avoid}
+    a{color:#000;text-decoration:none}
+  }
+  @media(max-width:700px){
+    .shell{padding:14px 12px 45px}
+    .hero{padding:22px 19px;border-radius:18px}
+    .card,.optional-body,.submit-panel,.review-panel{padding:17px}
+    .two-col,.dashboard-grid{grid-template-columns:1fr}
+    .qtop{gap:10px}.qnum{width:30px;height:30px}
+  }
+</style>
+</head>
+<body>
+<main class="shell" id="app"></main>
+
+<script>
+/*
+  MAKING OXYGEN THERAPY VISIBLE™ — STANDALONE FRONT-END
+  ------------------------------------------------------
+  Default mode is participant mode.
+  Presenter dashboard: add ?dashboard=1 to the page URL.
+
+  DATA MODE
+  - With REMOTE_API_URL left blank, submissions are stored in localStorage.
+    This is useful for testing, but it is NOT a cross-device live dashboard.
+  - To make the dashboard live across participant devices, set REMOTE_API_URL
+    to an endpoint that:
+       POST  accepts one submission JSON object
+       GET   returns an array of submission JSON objects
+    No quiz/UI rewrite is required.
+*/
+const REMOTE_API_URL = "https://agctxecwjdoypavqlbya.supabase.co/functions/v1/motv-submit";
+const LIVE_DASHBOARD_ENABLED = Boolean(REMOTE_API_URL);
+const STORAGE_KEY = "motv_submissions_v2";
+const COMPLETED_KEY = "motv_submission_completed_v2";
+const LAST_SUBMISSION_KEY = "motv_last_submission_v2";
+const EVER_SUBMITTED_KEY = "motv_has_submitted_once_v2";
+
+const references = {
+  odriscoll2017: {
+    short: "O’Driscoll et al., 2017",
+    full: "O’Driscoll BR, Howard LS, Earis J, Mak V. BTS guideline for oxygen use in adults in healthcare and emergency settings. Thorax. 2017."
+  },
+  barnett2022: {
+    short: "Barnett et al., 2022",
+    full: "Barnett A, et al. Thoracic Society of Australia and New Zealand position statement on acute oxygen use in adults. Respirology. 2022;27(4):262–276."
+  },
+  chu2018: {
+    short: "Chu et al., 2018",
+    full: "Chu DK, et al. Mortality and morbidity in acutely ill adults treated with liberal versus conservative oxygen therapy (IOTA): a systematic review and meta-analysis. The Lancet. 2018;391:1693–1705."
+  },
+  khanna2020: {
+    short: "Khanna et al., 2020",
+    full: "Khanna AK, et al. Prediction of opioid-induced respiratory depression on inpatient wards using continuous capnography and oximetry: the PRODIGY trial. Anesthesia & Analgesia. 2020;131(4):1012–1024."
+  },
+  pretto2014: {
+    short: "Pretto et al., 2014",
+    full: "Pretto JJ, et al. Clinical use of pulse oximetry: official guidelines from the Thoracic Society of Australia and New Zealand. Respirology. 2014;19(1):38–46."
+  },
+  hill2020: {
+    short: "Hill & Annesley, 2020",
+    full: "Hill B, Annesley SH. Monitoring respiratory rate in adults. British Journal of Nursing. 2020."
+  },
+  seeley2015: {
+    short: "Seeley et al., 2015",
+    full: "Seeley MC, et al. Graduate nurses’ knowledge of the functions and limitations of pulse oximetry. Journal of Clinical Nursing. 2015;24:3538–3549."
+  },
+  fda2025: {
+    short: "U.S. FDA, 2025",
+    full: "U.S. Food and Drug Administration. Pulse oximetry accuracy, limitations and factors that can affect readings. 2025."
+  },
+  sjoding2020: {
+    short: "Sjoding et al., 2020",
+    full: "Sjoding MW, et al. Racial bias in pulse oximetry measurement. New England Journal of Medicine. 2020;383:2477–2478."
+  },
+  fawzy2022: {
+    short: "Fawzy et al., 2022",
+    full: "Fawzy A, et al. Racial and ethnic discrepancy in pulse oximetry and delayed identification of treatment eligibility among patients with COVID-19. JAMA Internal Medicine. 2022."
+  },
+  mcgrath2026: {
+    short: "McGrath et al., 2026",
+    full: "McGrath SP, et al. Assessing the impact of supplemental oxygen use on deterioration detection. Journal of Clinical Nursing. 2026."
+  },
+  moga2016: {
+    short: "Moga & Chojecki, 2016",
+    full: "Moga C, Chojecki D. Oxygen therapy in acute care settings: a review of guidelines and recommendations. CADTH. 2016."
+  },
+  who2020: {
+    short: "WHO, 2020",
+    full: "World Health Organization. Oxygen sources and distribution for health care facilities. 2020."
+  },
+  medford2009: {
+    short: "Medford et al., 2009",
+    full: "Medford ARL, et al. Clinical considerations in oxygen delivery and Venturi-device performance. 2009."
+  },
+  tang2024: {
+    short: "Tang et al., 2024",
+    full: "Tang et al. Study of breathing pattern, inspiratory demand and delivered oxygen concentration with nasal cannula oxygen. 2024."
+  },
+  buchan2024: {
+    short: "Buchan et al., 2024",
+    full: "Buchan et al. Implementing oxygen therapy in medical wards: a scoping review. Journal of Clinical Medicine. 2024;13(18):5506."
+  },
+  ahs2020: {
+    short: "Alberta Health Services, 2020",
+    full: "Alberta Health Services. Oxygen therapy and weaning guidance referenced in the MOTV evidence review. 2020."
+  },
+  brown2025: {
+    short: "Brown et al., 2025",
+    full: "Brown D, Birhanu D, Lauri M, Lubo O, Too PK, Naidu K, Ravinsdran V, Samor M. Global access to medical oxygen: embedding nursing involvement. The Lancet Global Health. 2025;13(3):e394–e395. doi:10.1016/S2214-109X(24)00499-6."
+  },
+  tariq2024: {
+    short: "Tariq et al., 2024",
+    full: "Tariq M, Siddhantakar A, Sherman JD, Cimprich A, Young SB. Life cycle assessment of medical oxygen. Journal of Cleaner Production. 2024;444:141126. doi:10.1016/j.jclepro.2024.141126."
+  }
+};
+
+const quizSections = [
+  {
+    title:"1. Oxygen indications",
+    questions:[{
+      id:"q1",
+      prompt:"Which of the following are clinical indications for supplemental oxygen therapy?",
+      description:"For this question, carbon monoxide poisoning, cluster headache, decompression sickness, palliative/end-of-life care, and sickle cell crisis are considered out of scope.",
+      type:"multi",
+      options:[
+        {id:"anxiety",text:"Anxiety/hyperventilation with normal SpO₂",grade:"wrong",why:"Anxiety or hyperventilation alone does not indicate a need for oxygen when oxygenation is adequate. Assess and treat the underlying cause.",refs:["odriscoll2017"]},
+        {id:"copd",text:"COPD exacerbation with normal SpO₂",grade:"wrong",why:"A COPD exacerbation does not automatically mean the patient needs oxygen. Oxygen should be used when indicated and titrated to the appropriate target range.",refs:["barnett2022","odriscoll2017"]},
+        {id:"hypovent",text:"Hypoventilation with normal SpO₂",grade:"wrong",why:"Oxygen does not correct inadequate ventilation or remove CO₂. A patient can hypoventilate while maintaining a normal SpO₂, particularly if supplemental oxygen is already being given.",refs:["odriscoll2017","khanna2020"]},
+        {id:"hypox",text:"Hypoxaemia",grade:"correct",why:"Hypoxaemia is the main indication for supplemental oxygen in acute care.",refs:["barnett2022","odriscoll2017"]},
+        {id:"pneumonia",text:"Pneumonia with normal SpO₂",grade:"wrong",why:"Pneumonia can cause hypoxaemia, but the diagnosis itself does not mean oxygen is needed when oxygenation is adequate.",refs:["odriscoll2017"]},
+        {id:"dyspnea",text:"Shortness of breath/dyspnea with normal SpO₂",grade:"wrong",why:"Dyspnoea is a symptom, not a measure of oxygenation. A patient may be very breathless without being hypoxaemic.",refs:["barnett2022","odriscoll2017"]},
+        {id:"suspected",text:"Suspected hypoxaemia when reliable SpO₂ cannot be obtained",grade:"partial",why:"An unreliable SpO₂ does not prove hypoxaemia. However, if the patient appears acutely unwell and hypoxaemia is clinically suspected, oxygen may need to be started while a reliable measurement or arterial blood gas is obtained.",refs:["barnett2022"]},
+        {id:"prevent",text:"To prevent possible desaturation if a patient deteriorates",grade:"wrong",why:"Oxygen should not routinely be given as a ‘safety buffer’ to an adequately oxygenated patient. Oxygen is a therapy that should have an indication and target.",refs:["barnett2022","chu2018"]},
+        {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
+      ],}]
+  },
+  {
+    title:"2. Identifying hypoxaemia",
+    questions:[{
+      id:"q2",
+      prompt:"How is hypoxaemia identified in acute care?",
+      type:"multi",
+      options:[
+        {id:"abg",text:"Arterial blood gas (PaO₂ or SaO₂)",grade:"correct",why:"An arterial blood gas provides direct information about arterial oxygenation and is used when more precise assessment is required.",refs:["barnett2022","odriscoll2017"]},
+        {id:"co2",text:"CO₂ level on a blood gas (PaCO₂ or PvCO₂)",grade:"wrong",why:"CO₂ primarily provides information about ventilation and acid-base physiology. It does not determine whether the patient is hypoxaemic.",refs:["barnett2022"]},
+        {id:"cyanosis",text:"Cyanosis",grade:"partial",why:"Cyanosis can increase suspicion of hypoxaemia, but it is not reliable enough to determine oxygenation by itself. Appearance can be affected by perfusion, haemoglobin level, lighting and other factors.",refs:["odriscoll2017"]},
+        {id:"spo2",text:"Pulse oximetry (SpO₂)",grade:"correct",why:"Pulse oximetry is the routine non-invasive method used to estimate arterial oxygen saturation and screen for hypoxaemia.",refs:["barnett2022","pretto2014"]},
+        {id:"rr",text:"Respiratory rate",grade:"wrong",why:"An abnormal respiratory rate can signal deterioration, but it does not tell you whether arterial oxygen is low.",refs:["hill2020","odriscoll2017"]},
+        {id:"sob",text:"Shortness of breath / Dyspnea",grade:"wrong",why:"Dyspnoea does not reliably identify hypoxaemia. A patient can be breathless with normal oxygenation or hypoxaemic without prominent breathlessness.",refs:["barnett2022","odriscoll2017"]},
+        {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
+      ],}]
+  },
+  {
+    title:"3. Pulse oximetry limitations",
+    questions:[{
+      id:"q3",
+      prompt:"Which of the following are limitations of pulse oximetry?",
+      type:"multi",
+      options:[
+        {id:"false_reassurance",text:"A normal SpO₂ can create false reassurance that overall respiratory status is stable",grade:"correct",why:"SpO₂ measures oxygen saturation, not ventilation. Supplemental oxygen can maintain a reassuring saturation while bradypnoea, apnoea, hypoventilation or hypercapnia develops.",refs:["pretto2014","khanna2020"]},
+        {id:"tissue",text:"A normal SpO₂ does not guarantee adequate oxygen delivery to the tissues",grade:"correct",why:"Oxygen delivery also depends on haemoglobin concentration, cardiac output and perfusion. A patient can therefore have a normal saturation but inadequate tissue oxygen delivery.",refs:["seeley2015","pretto2014"]},
+        {id:"signal_factors",text:"Movement, shivering, poor circulation, cold extremities, sensor position, nail products, bright light or measurement site can affect the reading",grade:"correct",why:"Pulse oximetry relies on an adequate optical and pulsatile signal. Patient, sensor and environmental factors can impair measurement accuracy.",refs:["pretto2014","fda2025"]},
+        {id:"paO2",text:"Does not show how high the PaO₂ is once saturation is near 100%",grade:"correct",why:"At high saturations, the oxyhaemoglobin dissociation curve flattens. A SpO₂ near 100% cannot tell you whether PaO₂ is moderately elevated or extremely high.",refs:["pretto2014","seeley2015"]},
+        {id:"flowing",text:"Does not tell you whether oxygen is actually flowing or the delivery system is connected properly",grade:"correct",why:"SpO₂ measures the patient’s physiological response. It does not directly monitor the oxygen source, tubing, flowmeter or patient interface.",refs:["odriscoll2017","moga2016"]},
+        {id:"intermittent",text:"Intermittent checks can miss changes between assessments",grade:"correct",why:"A spot reading only describes one moment in time. Desaturation or deterioration can occur between measurements.",refs:["mcgrath2026","khanna2020"]},
+        {id:"co",text:"May be misleading in abnormal haemoglobin states",grade:"correct",why:"Conventional pulse oximetry cannot reliably distinguish some abnormal haemoglobin species and can therefore produce misleadingly reassuring readings.",refs:["pretto2014"]},
+        {id:"skin",text:"May read falsely high in some people with darker skin",grade:"correct",why:"Studies have found greater risk of pulse oximetry overestimating arterial saturation in some patients with darker skin pigmentation. Performance varies by device and circumstance.",refs:["sjoding2020","fawzy2022"]},
+        {id:"stale",text:"Values may be delayed, held or stale when the signal is poor or lost",grade:"correct",why:"Signal averaging and signal loss can mean a displayed value does not fully reflect the patient’s current condition.",refs:["pretto2014","fda2025"]},
+        {id:"unreliable_on_o2",text:"Pulse oximetry is less reliable in a patient receiving supplemental oxygen",grade:"wrong",why:"Pulse oximetry remains useful during oxygen therapy. The limitation is that it must be interpreted in context and does not independently assess ventilation or the amount of oxygen support required.",refs:["pretto2014","mcgrath2026"]},
+        {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
+      ],}]
+  },
+  {
+    title:"4. Monitoring and reassessment",
+    questions:[{
+      id:"q4",
+      prompt:"Which of the following should prompt more frequent monitoring or reassessment in a patient receiving oxygen?",
+      type:"multi",
+      options:[
+        {id:"o2_need",text:"Oxygen requirement is new, increasing, or rising even though SpO₂ remains in target",grade:"correct",why:"A patient who requires more oxygen to maintain the same saturation may be deteriorating even though the displayed SpO₂ still looks acceptable.",refs:["barnett2022"]},
+        {id:"breathing",text:"Respiratory rate, breathing pattern or work of breathing is abnormal or changing",grade:"correct",why:"Tachypnoea, bradypnoea, apnoea, abnormal breathing patterns or increasing work of breathing can signal deterioration independently of SpO₂.",refs:["hill2020","khanna2020"]},
+        {id:"loc",text:"Level of consciousness has changed, including new drowsiness or confusion",grade:"correct",why:"Changes in consciousness may reflect hypoxaemia, hypercapnia, respiratory depression or other deterioration.",refs:["odriscoll2017","khanna2020"]},
+        {id:"therapy_change",text:"Oxygen has been started, increased, reduced, weaned, stopped, or the delivery device has been changed",grade:"correct",why:"Changes in therapy should be followed by reassessment to determine whether the intended response occurred and whether the patient remains within target.",refs:["barnett2022","buchan2024"]},
+        {id:"mismatch",text:"The SpO₂ signal is unreliable or does not match the patient’s clinical condition",grade:"correct",why:"A reassuring number should not override a concerning clinical assessment. Check the patient, sensor and signal and obtain further assessment when needed.",refs:["pretto2014","fda2025"]},
+        {id:"delivery_problem",text:"There is a suspected oxygen-delivery problem, such as a disconnection, kink, leak or source problem",grade:"correct",why:"Anything that could interrupt the oxygen pathway should trigger prompt reassessment of both the equipment and the patient.",refs:["odriscoll2017","moga2016"]},
+        {id:"transport",text:"The patient is being transported, transferred, or switched between oxygen sources",grade:"correct",why:"Transitions introduce risks including disconnection, incorrect flow, inadequate remaining supply and missed reconnection.",refs:["odriscoll2017","who2020"]},
+        {id:"opioids",text:"The patient is receiving opioids or sedatives and is at risk of respiratory depression",grade:"correct",why:"Respiratory depression can develop while supplemental oxygen maintains SpO₂. RR, breathing pattern and level of consciousness therefore remain important.",refs:["khanna2020"]},
+        {id:"unstable",text:"The patient is clinically unstable or worsening for any reason",grade:"correct",why:"Monitoring should follow the patient’s overall condition and trajectory rather than a single oxygen-related parameter.",refs:["barnett2022","odriscoll2017"]},
+        {id:"stable",text:"The patient is comfortable, clinically stable and remains within target on unchanged oxygen",grade:"wrong",why:"This still requires routine monitoring and reassessment, but by itself it does not necessarily indicate that monitoring frequency needs to increase.",refs:["barnett2022","buchan2024"]},
+        {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
+      ],}]
+  },
+  {
+    title:"5. Oxygen delivery",
+    questions:[{
+      id:"q5",
+      prompt:"What can influence how much oxygen a patient actually receives?",
+      type:"multi",
+      options:[
+        {id:"breathing",text:"Breathing pattern, depth of breathing and inspiratory demand",grade:"correct",why:"With variable-performance and low-flow systems, the patient’s inspiratory demand and breathing pattern affect how much room air mixes with supplied oxygen.",refs:["tang2024","moga2016"]},
+        {id:"fit",text:"Fit and position of the mask or nasal cannula",grade:"correct",why:"A displaced or poorly positioned interface can alter the amount of oxygen reaching the patient.",refs:["moga2016","medford2009"]},
+        {id:"tubing",text:"Leaks, kinks or disconnections in the tubing",grade:"correct",why:"These can reduce or completely interrupt oxygen delivery.",refs:["moga2016"]},
+        {id:"flow",text:"Oxygen flow rate",grade:"correct",why:"Flow influences oxygen delivery, although the relationship between flow and FiO₂ depends on the device.",refs:["moga2016"]},
+        {id:"device",text:"Type of oxygen delivery device",grade:"correct",why:"Nasal cannulae, simple masks, Venturi masks, reservoir masks and high-flow systems deliver oxygen differently and provide different degrees of FiO₂ control.",refs:["moga2016"]},
+        {id:"source",text:"Type of oxygen source (e.g., liquid oxygen, compressed cylinder, PSA plant, oxygen concentrator)",grade:"correct",why:"Different oxygen sources can influence the oxygen that ultimately reaches the patient. The differences may be small when systems are functioning normally, but sources can differ in oxygen concentration, available flow and pressure, capacity, reliability, and risk of interruption or depletion.",refs:["who2020","tariq2024"]},
+        {id:"source_on",text:"Whether the oxygen source is turned on and has adequate oxygen supply",grade:"correct",why:"The delivery system cannot provide the intended therapy if the source is off, depleted or unable to supply the required flow.",refs:["who2020","odriscoll2017"]},
+        {id:"spo2_number",text:"The SpO₂ number displayed on the pulse oximeter",grade:"wrong",why:"SpO₂ reflects the patient’s physiological response. It does not determine the amount or concentration of oxygen being delivered.",refs:["pretto2014","seeley2015"]},
+        {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
+      ],}]
+  },
+  {
+    title:"6. Oxygen therapy myths",
+    questions:[
+      {
+        id:"q6a",prompt:"The higher the SpO₂, the better.",type:"single",
+        options:[
+          {id:"true",text:"True",grade:"wrong",why:"Once adequate oxygenation has been achieved, higher is not automatically better. Oxygen should be titrated to the patient’s appropriate target rather than used to maximize saturation.",refs:["chu2018","barnett2022"]},
+          {id:"false",text:"False",grade:"correct",why:"Once adequate oxygenation has been achieved, higher is not automatically better. Oxygen should be titrated to the patient’s appropriate target rather than used to maximize saturation.",refs:["chu2018","barnett2022"]}
+        ],},
+      {
+        id:"q6b",prompt:"Nurses should be cautious about giving oxygen to patients with COPD because it suppresses their hypoxic drive.",type:"single",
+        options:[
+          {id:"true",text:"True",grade:"wrong",why:"Hypoxaemic patients with COPD still need oxygen. Oxygen-induced hypercapnia is real, but suppression of ‘hypoxic drive’ is not considered the main mechanism. Oxygen should be titrated to the appropriate target and the patient reassessed.",refs:["odriscoll2017","barnett2022"]},
+          {id:"false",text:"False",grade:"correct",why:"Hypoxaemic patients with COPD still need oxygen. Oxygen-induced hypercapnia is real, but suppression of ‘hypoxic drive’ is not considered the main mechanism. Oxygen should be titrated to the appropriate target and the patient reassessed.",refs:["odriscoll2017","barnett2022"]}
+        ],},
+      {
+        id:"q6c",prompt:"A stable patient with a stable SpO₂ should continue on the same oxygen flow.",type:"single",
+        options:[
+          {id:"true",text:"True",grade:"wrong",why:"A stable SpO₂ tells you the patient’s saturation on the current oxygen dose. It does not tell you whether that amount of oxygen is still needed. If appropriate, consider reduction or weaning according to the care plan and local policy.",refs:["odriscoll2017","buchan2024","ahs2020"]},
+          {id:"false",text:"False",grade:"correct",why:"A stable SpO₂ tells you the patient’s saturation on the current oxygen dose. It does not tell you whether that amount of oxygen is still needed. If appropriate, consider reduction or weaning according to the care plan and local policy.",refs:["odriscoll2017","buchan2024","ahs2020"]}
+        ],},
+      {
+        id:"q6d",prompt:"Respiratory rate is less important to measure accurately if the patient’s SpO₂ is stable.",type:"single",
+        options:[
+          {id:"true",text:"True",grade:"wrong",why:"A stable SpO₂ does not mean ventilation or respiratory status is stable. Respiratory rate can change before oxygen saturation falls, and supplemental oxygen can maintain SpO₂ even when breathing becomes dangerously slow or ineffective.",refs:["hill2020","khanna2020"]},
+          {id:"false",text:"False",grade:"correct",why:"A stable SpO₂ does not mean ventilation or respiratory status is stable. Respiratory rate can change before oxygen saturation falls, and supplemental oxygen can maintain SpO₂ even when breathing becomes dangerously slow or ineffective.",refs:["hill2020","khanna2020"]}
+        ],},
+      {
+        id:"q6e",prompt:"Improving global access to medical oxygen requires nurses to be involved in how oxygen is used, implemented and managed.",type:"single",
+        options:[
+          {id:"true",text:"True",grade:"correct",why:"Nurses are central to how oxygen therapy is assessed, administered, monitored and sustained in practice. The authors call for nurses to be involved and empowered in medical-oxygen policy, implementation, training, education, and decisions about resource allocation and use.",refs:["brown2025"]},
+          {id:"false",text:"False",grade:"wrong",why:"Nurses are central to how oxygen therapy is assessed, administered, monitored and sustained in practice. The authors call for nurses to be involved and empowered in medical-oxygen policy, implementation, training, education, and decisions about resource allocation and use.",refs:["brown2025"]}
+        ],},
+      {
+        id:"q6f",prompt:"It is okay to leave oxygen running when it is not being used by the patient.",type:"single",
+        options:[
+          {id:"true",text:"True",grade:"wrong",why:"Oxygen that is left flowing when it is not being used by the patient is unnecessary consumption. Medical oxygen has resource and environmental impacts across production and delivery, and those impacts increase with oxygen use, flow and duration. Turn off oxygen that is no longer being used when it is safe and appropriate to do so.",refs:["tariq2024"]},
+          {id:"false",text:"False",grade:"correct",why:"Oxygen that is left flowing when it is not being used by the patient is unnecessary consumption. Medical oxygen has resource and environmental impacts across production and delivery, and those impacts increase with oxygen use, flow and duration. Turn off oxygen that is no longer being used when it is safe and appropriate to do so.",refs:["tariq2024"]}
+        ],}
+    ]
+  }
+];
+
+const optionalFeedback = {
+  course:[
+    {id:"course_useful",type:"ynid",label:"Overall, was this Lunch & Learn useful to your nursing practice?",notesLabel:"Optional comments"},
+    {id:"course_change",type:"text",label:"Did this Lunch & Learn change or reinforce anything about how you think about oxygen therapy in your practice?"},
+    {id:"course_change_request",type:"text",label:"Is there anything you would change, add, or explain differently?"}
+  ],
+  device:[
+    {id:"delivery_visible",type:"ynid",label:"A device that makes interruptions in oxygen delivery more visible would be useful in my nursing practice."},
+    {id:"rr_objective",type:"ynid",label:"A device that provides objective information about respiratory rate would be useful in my nursing practice."},
+    {id:"earlier_awareness",type:"ynid",label:"A device that alerts me to an unexpected change in oxygen delivery or respiratory rate could help me assess or respond to a patient sooner."},
+    {id:"would_use",type:"ynid",label:"If Conserve Tree™ were available on my unit, I would use it.",notesLabel:"If it depends, please tell us more"},
+    {id:"would_use_scenarios",type:"text",label:"In what situations or clinical scenarios do you think Conserve Tree™ would be most useful?"}
+  ]
+};
+
+const app = document.getElementById("app");
+const isDashboard = new URLSearchParams(location.search).get("dashboard") === "1";
+
+function esc(s=""){
+  return String(s).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+}
+function uid(){return "motv_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,9)}
+function shortRefs(ids=[]){return ids.map(id=>references[id]?.short).filter(Boolean).join("; ")}
+function allQuestions(){return quizSections.flatMap(s=>s.questions)}
+
+function renderParticipant(){
+  const completed = localStorage.getItem(COMPLETED_KEY) === "true";
+  if(completed){
+    const raw = localStorage.getItem(LAST_SUBMISSION_KEY);
+    if(raw){
+      try{return renderPostSubmit(JSON.parse(raw), true)}catch(e){}
+    }
+  }
+
+  let html = `
+    <header class="hero">
+      <div class="eyebrow">Making Oxygen Therapy Visible™</div>
+      <h1>Lunch & Learn</h1>
+    </header>
+    <div class="notice">Educational content should be used with patient-specific orders, your own clinical judgement and applicable local policy. Making Oxygen Therapy Visible™ does not replace your professional responsibilities, applicable clinical guidelines, facility policies or protocols.</div>
+    <form id="motvForm" novalidate>
+  `;
+
+  let displayN = 1;
+  for(const section of quizSections){
+    html += `<div class="section-heading"><h2>${esc(section.title)}</h2></div>`;
+    for(const q of section.questions){
+      html += `<section class="card" data-question="${q.id}">
+        <div class="qtop"><div class="qnum">${displayN++}</div><div><div class="qtext">${esc(q.prompt)}</div>${q.description ? `<div class="qhint" style="margin-top:8px">${esc(q.description)}</div>` : ""}${q.type === "multi" ? `<div class="qhint">Select all that apply.</div>` : ""}</div></div>
+        <div class="options">`;
+      for(const o of q.options){
+        const type = q.type === "single" ? "radio" : "checkbox";
+        html += `<label class="option" data-option="${o.id}">
+          <input type="${type}" name="${q.id}${q.type === "multi" ? "[]" : ""}" value="${o.id}" ${o.confidence ? 'data-confidence="1"' : ""}>
+          <span class="option-text">${esc(o.text)}</span>
+        </label>`;
+      }
+      html += `</div></section>`;
+    }
+  }
+
+  html += `
+    <section class="optional-panel" id="courseFeedback">
+      <div class="optional-head"><div class="eyebrow" style="color:#49616f;opacity:1">Optional</div><h2>Course feedback</h2></div>
+      <div class="optional-body">${renderOptionalFields(optionalFeedback.course,"course")}</div>
+    </section>
+
+    <section class="optional-panel" id="deviceFeedback">
+      <div class="optional-head"><div class="eyebrow" style="color:#49616f;opacity:1">Optional</div><h2>Conserve Tree™ feedback</h2></div>
+      <div class="optional-body">
+        ${renderOptionalFields(optionalFeedback.device,"device")}
+        <div class="field-group">
+          <div class="field-label">Optional follow-up</div>
+          <p class="small">If you would like Karlene to contact you to discuss your feedback further, you may leave your name and email below. Providing contact information is optional. See the <a href="https://www.conservemed.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+          <div class="two-col">
+            <div><label class="small" for="contact_name">Name</label><input id="contact_name" name="contact_name" type="text" autocomplete="name" placeholder="Optional"></div>
+            <div><label class="small" for="contact_email">Email</label><input id="contact_email" name="contact_email" type="email" autocomplete="email" placeholder="Optional"></div>
+          </div>
+          <div style="margin-top:12px">
+            <label class="small" for="contact_notes">What would you like to discuss?</label>
+            <textarea id="contact_notes" name="contact_notes" placeholder="Optional"></textarea>
+          </div>
+          <label class="ack" style="margin-top:12px">
+            <input type="checkbox" id="share_quiz_results" name="share_quiz_results">
+            <span><strong>Send my quiz result to my Making Oxygen Therapy Visible™ trainer.</strong><br><span class="small">Once you book your session, we will match your quiz results to your trainer to help guide the session. <a href="https://www.conservemed.com/nurse-training" target="_blank" rel="noopener">Learn more</a>.</span></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="submit-panel">
+      <h2 style="margin-top:0">Final acknowledgement</h2>
+      <label class="ack" id="ack_submit_label"><input type="checkbox" id="ack_submit" name="completion_mode" value="submit"><span><strong>I am currently a practising nurse, and this is my first time submitting this quiz.</strong><br><span class="small">Submissions are included in the response dataset, and you will be sent to the results page after submitting.</span></span></label>
+      <label class="ack" id="ack_results_only_label" style="margin-top:10px"><input type="checkbox" id="ack_results_only" name="completion_mode" value="results_only"><span><strong>I am not currently a practising nurse, or I have completed this quiz before.</strong><br><span class="small">I am taking it for learning or practice only. My answers and feedback will not be saved or sent anywhere.</span></span></label>
+      <div class="error" id="formError" role="alert"></div>
+      <div class="actions">
+        <button class="btn btn-primary" id="submitBtn" type="button" disabled>Submit responses</button>
+        <button class="btn btn-secondary" id="resultsOnlyBtn" type="button" disabled>Get results without submitting</button>
+      </div>
+    </section>
+    </form>
+  `;
+  app.innerHTML = html;
+  bindParticipantEvents();
+  updateProgress();
+}
+
+function renderOptionalFields(fields,prefix){
+  return fields.map(f=>{
+    if(f.type === "text"){
+      return `<div class="field-group"><label class="field-label" for="${f.id}">${esc(f.label)}</label><textarea id="${f.id}" name="${f.id}" placeholder="Optional"></textarea></div>`;
+    }
+    const noteId = `${f.id}_notes`;
+    return `<div class="field-group">
+      <div class="field-label">${esc(f.label)}</div>
+      <div class="choice-row" role="group" aria-label="${esc(f.label)}">
+        ${["Yes","No","It depends"].map(v=>`<label class="choice-pill"><input type="radio" name="${f.id}" value="${v}"><span>${v}</span></label>`).join("")}
+      </div>
+      <div class="conditional" id="${noteId}_wrap">
+        <label class="small" for="${noteId}">${esc(f.notesLabel || "If it depends, please tell us more")}</label>
+        <textarea id="${noteId}" name="${noteId}" placeholder="Optional"></textarea>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function bindParticipantEvents(){
+  const form = document.getElementById("motvForm");
+  form.addEventListener("change", e=>{
+    const input = e.target;
+    // “I’m not confident” is intentionally independent of the clinical selections.
+    // Participants may select it in addition to any other answer(s).
+    if(input.type === "radio" && optionalFieldIds().includes(input.name)){
+      const wrap = document.getElementById(`${input.name}_notes_wrap`);
+      if(wrap) wrap.classList.toggle("show", input.value === "It depends");
+    }
+    if(input.id === "ack_submit" && input.checked){
+      const other=document.getElementById("ack_results_only"); if(other) other.checked=false;
+    }
+    if(input.id === "ack_results_only" && input.checked){
+      const other=document.getElementById("ack_submit"); if(other) other.checked=false;
+    }
+    updateCompletionButtons();
+    syncSelectedStyles();
+    updateProgress();
+  });
+  form.addEventListener("input", updateProgress);
+  form.addEventListener("submit", e=>e.preventDefault());
+  document.getElementById("submitBtn")?.addEventListener("click", ()=>handleCompletion("submit"));
+  document.getElementById("resultsOnlyBtn")?.addEventListener("click", ()=>handleCompletion("results_only"));
+
+  const hasSubmittedBefore = localStorage.getItem(EVER_SUBMITTED_KEY) === "true";
+  if(hasSubmittedBefore){
+    const firstTime = document.getElementById("ack_submit");
+    const practice = document.getElementById("ack_results_only");
+    if(firstTime){ firstTime.checked=false; firstTime.disabled=true; }
+    if(practice) practice.checked=true;
+    const label=document.getElementById("ack_submit_label");
+    if(label) label.title="A submission has already been recorded from this browser. Retakes use results-only mode.";
+  }
+  updateCompletionButtons();
+  syncSelectedStyles();
+}
+
+function updateCompletionButtons(){
+  const submitAck=Boolean(document.getElementById("ack_submit")?.checked);
+  const resultsOnlyAck=Boolean(document.getElementById("ack_results_only")?.checked);
+  const submitBtn=document.getElementById("submitBtn");
+  const resultsBtn=document.getElementById("resultsOnlyBtn");
+  if(submitBtn) submitBtn.disabled=!submitAck;
+  if(resultsBtn) resultsBtn.disabled=!resultsOnlyAck;
+}
+
+function optionalFieldIds(){return [...optionalFeedback.course,...optionalFeedback.device].filter(x=>x.type==="ynid").map(x=>x.id)}
+function syncSelectedStyles(){
+  document.querySelectorAll("label.option").forEach(l=>l.classList.toggle("selected",Boolean(l.querySelector("input")?.checked)));
+}
+function quizAnsweredCount(){
+  return allQuestions().filter(q=>{
+    return document.querySelectorAll(`[name="${q.id}${q.type==="multi"?"[]":""}"]:checked`).length>0;
+  }).length;
+}
+function updateProgress(){}
+function collectQuizResponses(){
+  const out={};
+  for(const q of allQuestions()){
+    const name = `${q.id}${q.type==="multi"?"[]":""}`;
+    const selected=[...document.querySelectorAll(`[name="${name}"]:checked`)].map(x=>x.value);
+    out[q.id]=q.type==="single" ? (selected[0]||null) : selected;
+  }
+  return out;
+}
+function collectFeedback(){
+  const readRadio=id=>document.querySelector(`[name="${id}"]:checked`)?.value||null;
+  const course={}, device={};
+  for(const f of optionalFeedback.course){
+    course[f.id]=f.type==="text" ? document.getElementById(f.id)?.value.trim()||"" : {answer:readRadio(f.id),notes:document.getElementById(`${f.id}_notes`)?.value.trim()||""};
+  }
+  for(const f of optionalFeedback.device){
+    device[f.id]=f.type==="text" ? document.getElementById(f.id)?.value.trim()||"" : {answer:readRadio(f.id),notes:document.getElementById(`${f.id}_notes`)?.value.trim()||""};
+  }
+  return {course,device,contact:{
+    name:document.getElementById("contact_name")?.value.trim()||"",
+    email:document.getElementById("contact_email")?.value.trim()||"",
+    notes:document.getElementById("contact_notes")?.value.trim()||"",
+    includeQuizResults:Boolean(document.getElementById("share_quiz_results")?.checked)
+  }};
+}
+function validateQuizAndEmail(){
+  const missing=[];
+  for(const q of allQuestions()){
+    const name=`${q.id}${q.type==="multi"?"[]":""}`;
+    if(document.querySelectorAll(`[name="${name}"]:checked`).length===0) missing.push(q.id);
+  }
+  const email=document.getElementById("contact_email")?.value.trim()||"";
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {ok:false,message:"Please enter a valid email address, or leave the optional email field blank."};
+  if(missing.length) return {ok:false,message:`Please answer all ${missing.length} remaining quiz question${missing.length===1?"":"s"} before viewing your results. Optional feedback can be skipped.`};
+  return {ok:true};
+}
+
+async function handleCompletion(mode){
+  const err=document.getElementById("formError");
+  err.classList.remove("show");
+  const valid=validateQuizAndEmail();
+  if(!valid.ok){err.textContent=valid.message;err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});return}
+
+  const submitAck=Boolean(document.getElementById("ack_submit")?.checked);
+  const resultsOnlyAck=Boolean(document.getElementById("ack_results_only")?.checked);
+  if(mode==="submit" && !submitAck){
+    err.textContent="To submit your responses, confirm that you are currently a practising nurse and this is your first submission.";
+    err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});return;
+  }
+  if(mode==="results_only" && !resultsOnlyAck){
+    err.textContent="For results without submitting, confirm that you are not currently a practising nurse or that you have completed this quiz before.";
+    err.classList.add("show");err.scrollIntoView({behavior:"smooth",block:"center"});return;
+  }
+
+  const submission={
+    id:uid(),
+    submittedAt:new Date().toISOString(),
+    version:"MOTV-LunchLearn-2026-09",
+    nurseAcknowledged:mode==="submit",
+    resultsOnly:mode==="results_only",
+    quiz:collectQuizResponses(),
+    feedback:collectFeedback()
+  };
+
+  if(mode==="results_only"){
+    // Deliberately do not call persistSubmission and do not write this attempt to localStorage.
+    renderPostSubmit(submission,false,true);
+    return;
+  }
+
+  const btn=document.getElementById("submitBtn");btn.disabled=true;btn.textContent="Submitting…";
+  try{
+    await persistSubmission(submission);
+    localStorage.setItem(COMPLETED_KEY,"true");
+    localStorage.setItem(EVER_SUBMITTED_KEY,"true");
+    localStorage.setItem(LAST_SUBMISSION_KEY,JSON.stringify(submission));
+    renderPostSubmit(submission,false,false);
+  }catch(error){
+    btn.disabled=false;btn.textContent="Submit responses";
+    err.textContent="Your response could not be saved. Please check the connection and try again.";
+    err.classList.add("show");
+  }
+}
+async function persistSubmission(submission){
+  if(LIVE_DASHBOARD_ENABLED){
+    const payload={
+      event_key:"rrc-2026-09-24",
+      practising_nurse:true,
+      first_submission_attested:true,
+      quiz_version:submission.version || "MOTV-LunchLearn-2026-09",
+      quiz_answers:submission.quiz || {},
+      device_validation:Object.fromEntries(Object.entries(submission.feedback?.device || {}).map(([key,value])=>{
+        if(value && typeof value === "object" && !Array.isArray(value) && "answer" in value){
+          const normalized = value.answer === "Yes" ? "yes" : value.answer === "No" ? "no" : value.answer === "It depends" ? "depends" : value.answer;
+          return [key,{...value,answer:normalized}];
+        }
+        return [key,value];
+      })),
+      course_feedback:submission.feedback?.course || null,
+      followup:{
+        name:submission.feedback?.contact?.name || "",
+        email:submission.feedback?.contact?.email || "",
+        discussion_notes:submission.feedback?.contact?.notes || "",
+        send_quiz_to_trainer:Boolean(submission.feedback?.contact?.includeQuizResults)
+      }
+    };
+    const r=await fetch(REMOTE_API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+    const responseBody=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(responseBody.error || "Remote submission failed");
+    submission.remoteSubmissionId=responseBody.submission_id || null;
+    return responseBody;
+  }
+  const list=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+  list.push(submission);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(list));
+}
+
+function evaluateSubmission(submission){
+  const review=[];
+  const usedRefs=new Set();
+  for(const q of allQuestions()){
+    const raw=submission.quiz[q.id];
+    const selected=q.type==="single" ? (raw?[raw]:[]) : (Array.isArray(raw)?raw:[]);
+
+    if(q.type==="single"){
+      const chosen=q.options.find(o=>selected.includes(o.id));
+      if(chosen && chosen.grade==="wrong"){
+        chosen.refs.forEach(r=>usedRefs.add(r));
+        const correct=q.options.find(o=>o.grade==="correct");
+        review.push({kind:"missed",question:q.prompt,item:chosen.text,expected:correct?.text||"Incorrect",why:chosen.why,refs:chosen.refs});
+      }
+      continue;
+    }
+
+    for(const o of q.options){
+      if(o.confidence || o.grade==="partial") continue;
+      const isSelected=selected.includes(o.id);
+      if(o.grade==="wrong" && isSelected){
+        o.refs.forEach(r=>usedRefs.add(r));
+        review.push({kind:"missed",question:q.prompt,item:o.text,expected:"Should not be selected",why:o.why,refs:o.refs});
+      }
+      if(o.grade==="correct" && !isSelected){
+        o.refs.forEach(r=>usedRefs.add(r));
+        review.push({kind:"missed",question:q.prompt,item:o.text,expected:"Should be selected",why:o.why,refs:o.refs});
+      }
+    }
+  }
+  return {review,usedRefs:[...usedRefs]};
+}
+
+function printLearning(){
+  // Called directly from the participant's click so browsers allow the native print dialog.
+  document.body.classList.add("printing-learning");
+  window.print();
+}
+
+window.addEventListener("afterprint",()=>{
+  document.body.classList.remove("printing-learning");
+});
+
+function startAgain(){
+  // Start a fresh attempt without deleting the record that this browser has already submitted once.
+  localStorage.removeItem(COMPLETED_KEY);
+  localStorage.removeItem(LAST_SUBMISSION_KEY);
+  renderParticipant();
+  window.scrollTo({top:0,behavior:"auto"});
+}
+
+function renderPostSubmit(submission,fromReload,resultsOnly=false){
+  const {review,usedRefs}=evaluateSubmission(submission);
+  const misses=review;
+  app.innerHTML=`
+    <header class="hero">
+      <div class="eyebrow">Making Oxygen Therapy Visible™</div>
+      <h1>${resultsOnly ? "Your results" : "Responses submitted"}</h1>
+      <p>${resultsOnly ? "This attempt was not submitted, saved, or sent anywhere. " : "Your submitted responses are now locked. "}Below you’ll see only the answers that need correction.</p>
+    </header>
+    <section class="review-panel">
+      <div class="review-summary"><strong>${misses.length===0 ? "No incorrect answers to review." : `${misses.length} answer${misses.length===1?"":"s"} to review.`}</strong></div>
+      ${misses.length ? `<h2>Review</h2>${misses.map(renderReviewItem).join("")}` : ""}
+      ${usedRefs.length ? `<div class="refs"><h3>References used in your review</h3><ol>${usedRefs.map(id=>`<li><strong>${esc(references[id]?.short||id)}.</strong> ${esc(references[id]?.full||"")}</li>`).join("")}</ol></div>` : ""}
+      <div class="actions" style="margin-top:26px">
+        <a class="btn btn-primary btn-link" href="https://www.conservemed.com/nurse-training" target="_blank" rel="noopener">Book 45-minute personalized nurse training</a>
+        <button class="btn btn-secondary" type="button" onclick="printLearning()">Print my learning</button>
+        <button class="btn btn-secondary" type="button" onclick="startAgain()">Start again</button>
+      </div>
+      ${resultsOnly ? "" : `<div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line)">
+        <a href="results.html" target="_blank" rel="noopener"><strong>View results from all participating nurses →</strong></a>
+      </div>`}
+    </section>
+    <div class="notice"><strong>${resultsOnly ? "Learning mode." : "Thank you."}</strong> ${resultsOnly ? "Nothing from this attempt was saved or sent." : (LIVE_DASHBOARD_ENABLED ? "Your submitted responses are included in the live dashboard." : "This copy is running in local testing mode. Your submission was saved in this browser only.")}</div>
+  `;
+  window.scrollTo({top:0,behavior:fromReload?"auto":"smooth"});
+}
+
+function renderReviewItem(x){
+  return `<article class="review-item missed">
+    <div class="review-label">Review</div>
+    <div class="small">${esc(x.question)}</div>
+    <div class="review-title">${esc(x.item)} <span class="status incorrect">${esc(x.expected)}</span></div>
+    <p class="why">${esc(x.why)}</p>
+    <div class="small"><strong>Reference:</strong> ${esc(shortRefs(x.refs))}</div>
+  </article>`;
+}
+
+async function getSubmissions(){
+  // The production aggregate dashboard uses its own read-only endpoint.
+  // This embedded presenter view remains a local-development helper only.
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+}
+async function renderDashboard(){
+  app.innerHTML=`<header class="hero"><div class="eyebrow">Presenter view</div><h1>MOTV Live Dashboard</h1><p>Aggregate quiz selections and optional feedback.</p></header><div id="dashBody"><div class="notice">Loading…</div></div>`;
+  try{
+    const subs=await getSubmissions();
+    const body=document.getElementById("dashBody");
+    const mode="Local development dashboard only — production results use the separate aggregate dashboard.";
+    let html=`<div class="mode-banner"><strong>${mode}</strong></div>
+      <div class="dashboard-grid"><div class="metric"><div class="n">${subs.length}</div><div class="lab">Submitted responses</div></div><div class="metric"><div class="n">${contactCount(subs)}</div><div class="lab">Requested follow-up</div></div><div class="metric"><div class="n">${deviceUseYes(subs)}</div><div class="lab">“Would use Conserve Tree” — Yes</div></div></div>
+      <div class="actions"><button class="btn btn-secondary" id="refreshDash">Refresh dashboard</button></div>`;
+    for(const q of allQuestions()) html+=renderDashboardQuestion(q,subs);
+    html+=renderFeedbackDashboard(subs);
+    body.innerHTML=html;
+    document.getElementById("refreshDash")?.addEventListener("click",renderDashboard);
+  }catch(e){document.getElementById("dashBody").innerHTML=`<div class="error show">Could not load dashboard data.</div>`}
+}
+function contactCount(subs){return subs.filter(s=>s.feedback?.contact?.email||s.feedback?.contact?.name||s.feedback?.contact?.notes||s.feedback?.contact?.includeQuizResults).length}
+function deviceUseYes(subs){return subs.filter(s=>s.feedback?.device?.would_use?.answer==="Yes").length}
+function renderDashboardQuestion(q,subs){
+  const denom=subs.length||1;
+  const rows=q.options.filter(o=>!o.confidence).map(o=>{
+    const count=subs.filter(s=>{
+      const r=s.quiz?.[q.id];
+      return Array.isArray(r)?r.includes(o.id):r===o.id;
+    }).length;
+    const pct=Math.round((count/denom)*100);
+    return `<div class="bar-row"><div class="bar-label"><span>${esc(o.text)}</span><strong>${count} (${pct}%)</strong></div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
+  }).join("");
+  return `<section class="dashboard-card"><h3>${esc(q.prompt)}</h3>${rows}</section>`;
+}
+function renderFeedbackDashboard(subs){
+  const ynFields=[...optionalFeedback.course,...optionalFeedback.device].filter(f=>f.type==="ynid");
+  let html=`<div class="section-heading"><h2>Optional feedback</h2><p>Only submitted optional responses are counted.</p></div>`;
+  for(const f of ynFields){
+    const answers=subs.map(s=>s.feedback?.course?.[f.id]?.answer ?? s.feedback?.device?.[f.id]?.answer).filter(Boolean);
+    const counts={"Yes":0,"No":0,"It depends":0};answers.forEach(a=>counts[a]=(counts[a]||0)+1);
+    const denom=answers.length||1;
+    html+=`<section class="dashboard-card"><h3>${esc(f.label)}</h3>${Object.entries(counts).map(([k,v])=>`<div class="bar-row"><div class="bar-label"><span>${k}</span><strong>${v} (${Math.round(v/denom*100)}%)</strong></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/denom*100)}%"></div></div></div>`).join("")}</section>`;
+  }
+  const textComments=[];
+  for(const s of subs){
+    for(const f of optionalFeedback.course){
+      const val=s.feedback?.course?.[f.id];
+      if(typeof val==="string"&&val.trim()) textComments.push({label:f.label,text:val.trim()});
+      else if(val?.notes) textComments.push({label:f.label,text:val.notes});
+    }
+    for(const f of optionalFeedback.device){
+      const val=s.feedback?.device?.[f.id];
+      if(typeof val==="string"&&val.trim()) textComments.push({label:f.label,text:val.trim()});
+      else if(val?.notes) textComments.push({label:f.label,text:val.notes});
+    }
+  }
+  html+=`<section class="dashboard-card"><h3>Written feedback</h3>${textComments.length?textComments.map(c=>`<div class="comment"><span class="tag">${esc(c.label)}</span><div style="margin-top:5px">${esc(c.text)}</div></div>`).join(""):"<div class='small'>No written comments yet.</div>"}</section>`;
+  const contacts=subs.filter(s=>s.feedback?.contact?.name||s.feedback?.contact?.email||s.feedback?.contact?.notes||s.feedback?.contact?.includeQuizResults).map(s=>s.feedback.contact);
+  html+=`<section class="dashboard-card"><h3>Requested follow-up</h3>${contacts.length?contacts.map(c=>`<div class="comment"><strong>${esc(c.name||"Name not provided")}</strong>${c.email?` — ${esc(c.email)}`:""}${c.notes?`<div style="margin-top:5px">${esc(c.notes)}</div>`:""}${c.includeQuizResults?`<div style="margin-top:5px"><span class="tag">Include quiz results</span></div>`:""}</div>`).join(""):"<div class='small'>No follow-up requests yet.</div>"}</section>`;
+  return html;
+}
+
+if(isDashboard) renderDashboard(); else renderParticipant();
+</script>
+</body>
+</html>
