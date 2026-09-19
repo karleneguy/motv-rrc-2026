@@ -42,7 +42,8 @@ body{margin:0;background:linear-gradient(180deg,#eaf2f7 0,#f5f7f9 300px);color:v
       <div class="eyebrow">Making Oxygen Therapy Visible™</div>
       <h1>RRC Lunch &amp; Learn — September 24, 2026</h1>
       <div class="hero-meta">
-        <span class="hero-pill" id="nurseCount">— nurses submitted</span>
+        <span class="hero-pill" id="nurseCount">— nurses started</span>
+        <span class="hero-pill" id="completedCount">— completed</span>
         <span class="hero-pill">Responses from September 24, 2026</span>
       </div>
     </div>
@@ -80,6 +81,17 @@ const labels = {
     co:"May be misleading in abnormal haemoglobin states",
     skin:"May read falsely high in some people with darker skin",
     stale:"Values may be delayed, held or stale when the signal is poor or lost"
+  },
+  q4: {
+    o2_need:"New or increasing oxygen requirement",
+    breathing:"Abnormal or changing respiratory rate, breathing pattern or work of breathing",
+    loc:"Changed level of consciousness",
+    therapy_change:"Oxygen therapy or delivery device changed",
+    mismatch:"SpO₂ signal is unreliable or does not match the patient",
+    delivery_problem:"Suspected oxygen-delivery problem",
+    transport:"Transport, transfer or oxygen-source switch",
+    opioids:"Opioids or sedatives with respiratory-depression risk",
+    unstable:"Clinical instability or worsening"
   },
   q5: {
     breathing:"Breathing pattern, depth and inspiratory demand",
@@ -123,7 +135,7 @@ function tfCards(items){
     const meta=labels.tf[id]; const d=byId[id]||{correct_percentage:0,incorrect_percentage:0};
     const positive=id==="q6e";
     const pct=positive?clamp(d.correct_percentage):clamp(d.incorrect_percentage);
-    return `<div class="tf-card ${positive?"celebrate":""}"><div class="q">${esc(meta.text)} <span class="badge ${meta.answer==="True"?"true":"false"}">${meta.answer}</span></div><div><div class="big">${pct}%</div><div class="small">${positive?"answered correctly":"answered incorrectly"}</div></div></div>`;
+    return `<div class="tf-card ${positive?"celebrate":""}"><div class="q">${esc(meta.text)} <span class="badge ${meta.answer==="True"?"true":"false"}">${meta.answer}</span></div><div><div class="big">${pct}%</div><div class="small">${positive?"answered correctly":"answered incorrectly"} · n = ${Number(d.n)||0}</div></div></div>`;
   }).join("");
 }
 
@@ -133,12 +145,13 @@ function validationCard(id,d){
 }
 
 function render(d){
-  document.getElementById("nurseCount").textContent=`${d.nurses_submitted ?? 0} nurses submitted`;
-  const q1=d.question_1||{}, q2=d.question_2||{}, q3=d.question_3||{}, q5=d.oxygen_delivery||{};
+  document.getElementById("nurseCount").textContent=`${d.participants_started ?? 0} nurses started`;
+  document.getElementById("completedCount").textContent=`${d.completed_submissions ?? 0} completed`;
+  const q1=d.question_1||{}, q2=d.question_2||{}, q3=d.question_3||{}, q4=d.monitoring||{}, q5=d.oxygen_delivery||{};
   const validation=d.device_validation||{questions:{},respondents:0};
   document.getElementById("dashboardBody").innerHTML=`
   <section class="section">
-    <div class="section-head"><h2>1. Oxygen indications</h2></div>
+    <div class="section-head"><h2>1. Oxygen indications</h2><div class="section-note">n = ${q1.n ?? 0} answered</div></div>
     <div class="grid2">
       <div class="card"><div class="bigstat">${clamp(q1.hypoxaemia_correct_percentage)}%</div><div class="statlabel">correctly identified hypoxaemia</div><div class="statnote">Hypoxaemia is the main indication for supplemental oxygen in routine acute-care use.</div></div>
       <div class="card"><div class="bigstat bad">${clamp(q1.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">selected at least one incorrect answer or marked “I’m not confident”</div></div>
@@ -147,7 +160,7 @@ function render(d){
   </section>
 
   <section class="section">
-    <div class="section-head"><h2>2. Identifying hypoxaemia</h2></div>
+    <div class="section-head"><h2>2. Identifying hypoxaemia</h2><div class="section-note">n = ${q2.n ?? 0} answered</div></div>
     <div class="grid3">
       <div class="card"><h3>Pulse oximetry (SpO₂)</h3><div class="bigstat">${clamp(q2.pulse_ox_correct_percentage)}%</div><div class="statlabel">correctly identified</div><div class="statnote">The routine non-invasive method used to identify and monitor hypoxaemia.</div></div>
       <div class="card"><h3>Arterial blood gas</h3><div class="bigstat">${clamp(q2.abg_correct_percentage)}%</div><div class="statlabel">correctly identified</div><div class="statnote">Provides direct arterial oxygenation information when more precise assessment is needed.</div></div>
@@ -157,13 +170,19 @@ function render(d){
   </section>
 
   <section class="section">
-    <div class="section-head"><h2>3. Pulse oximetry limitations</h2><div class="section-note">The following are the pulse oximetry limitations nurses missed most often. Percentages show how many nurses did not recognize each limitation.</div></div>
+    <div class="section-head"><h2>3. Pulse oximetry limitations</h2><div class="section-note">n = ${q3.n ?? 0} answered · percentages show how many nurses did not recognize each limitation.</div></div>
     <div class="grid3" style="margin-bottom:16px"><div class="card"><div class="bigstat bad">${clamp(q3.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">missed at least one correct answer or marked “I’m not confident”</div></div></div>
     <div class="card">${topList(q3.most_overlooked,labels.q3)}</div>
   </section>
 
   <section class="section">
-    <div class="section-head"><h2>4. Oxygen delivery</h2><div class="section-note">The following are the factors nurses most often recognized as influencing how much oxygen a patient actually receives during care.</div></div>
+    <div class="section-head"><h2>4. Monitoring and reassessment</h2><div class="section-note">n = ${q4.n ?? 0} answered · most-recognized reasons to reassess more frequently.</div></div>
+    <div class="grid3" style="margin-bottom:16px"><div class="card"><div class="bigstat bad">${clamp(q4.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">missed at least one correct answer, selected the stable-patient distractor, or marked “I’m not confident”</div></div></div>
+    <div class="card">${topList(q4.most_recognized,labels.q4,"green")}</div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>5. Oxygen delivery</h2><div class="section-note">n = ${q5.n ?? 0} answered · factors nurses most often recognized as influencing how much oxygen a patient actually receives.</div></div>
     <div class="grid3" style="margin-bottom:16px"><div class="card"><div class="bigstat bad">${clamp(q5.incorrect_or_not_confident_percentage)}%</div><div class="statlabel">missed at least one correct answer or marked “I’m not confident”</div></div></div>
     <div class="card">${topList(q5.most_recognized,labels.q5,"green")}</div>
   </section>
@@ -191,7 +210,7 @@ async function loadDashboard(){
     const d=await r.json();
     if(!r.ok) throw new Error(d.error||"Could not load results");
     render(d);
-    status.textContent=`Live dashboard · ${d.nurses_submitted ?? 0} loaded`;
+    status.textContent=`Live dashboard · ${d.participants_started ?? 0} started`;
   }catch(e){
     status.textContent="Connection error";
     document.getElementById("dashboardBody").innerHTML=`<div class="error-box"><strong>Could not load the live results.</strong><div style="margin-top:6px">${esc(e.message)}</div></div>`;
