@@ -249,9 +249,9 @@ const references = {
     short: "Fawzy et al., 2022",
     full: "Fawzy A, et al. Racial and ethnic discrepancy in pulse oximetry and delayed identification of treatment eligibility among patients with COVID-19. JAMA Internal Medicine. 2022."
   },
-  mcgrath2026: {
-    short: "McGrath et al., 2026",
-    full: "McGrath SP, et al. Assessing the impact of supplemental oxygen use on deterioration detection. Journal of Clinical Nursing. 2026."
+  downey2018: {
+    short: "Downey et al., 2018",
+    full: "Downey CL, Chapman S, Randell R, Brown JM, Jayne DG. The impact of continuous versus intermittent vital signs monitoring in hospitals: a systematic review and narrative synthesis. International Journal of Nursing Studies. 2018;84:19–27. doi:10.1016/j.ijnurstu.2018.04.013."
   },
   moga2016: {
     short: "Moga & Chojecki, 2016",
@@ -298,8 +298,8 @@ const quizSections = [
       options:[
         {id:"anxiety",text:"Anxiety/hyperventilation with normal SpO₂",grade:"wrong",why:"Anxiety or hyperventilation alone does not indicate a need for oxygen when oxygenation is adequate. Assess and treat the underlying cause.",refs:["odriscoll2017"]},
         {id:"copd",text:"COPD exacerbation with normal SpO₂",grade:"wrong",why:"A COPD exacerbation does not automatically mean the patient needs oxygen. Oxygen should be used when indicated and titrated to the appropriate target range.",refs:["barnett2022","odriscoll2017"]},
-        {id:"hypovent",text:"Hypoventilation with normal SpO₂",grade:"wrong",why:"Oxygen does not correct inadequate ventilation or remove CO₂. A patient can hypoventilate while maintaining a normal SpO₂, particularly if supplemental oxygen is already being given.",refs:["odriscoll2017","khanna2020"]},
-        {id:"hypox",text:"Hypoxaemia",grade:"correct",why:"Hypoxaemia is the main indication for supplemental oxygen in acute care.",refs:["barnett2022","odriscoll2017"]},
+        {id:"hypovent",text:"Hypoventilation with normal SpO₂",grade:"wrong",why:"Oxygen does not correct inadequate ventilation or remove CO₂. If oxygenation is adequate, supplemental oxygen is not a treatment for hypoventilation itself. Assess and address the cause of inadequate ventilation.",refs:["odriscoll2017","khanna2020"]},
+        {id:"hypox",text:"Hypoxaemia",grade:"correct",why:"Hypoxaemia is the usual indication for supplemental oxygen in acute care.",refs:["barnett2022","odriscoll2017"]},
         {id:"pneumonia",text:"Pneumonia with normal SpO₂",grade:"wrong",why:"Pneumonia can cause hypoxaemia, but the diagnosis itself does not mean oxygen is needed when oxygenation is adequate.",refs:["odriscoll2017"]},
         {id:"dyspnea",text:"Shortness of breath/dyspnea with normal SpO₂",grade:"wrong",why:"Dyspnoea is a symptom, not a measure of oxygenation. A patient may be very breathless without being hypoxaemic.",refs:["barnett2022","odriscoll2017"]},
         {id:"suspected",text:"Suspected hypoxaemia when reliable SpO₂ cannot be obtained",grade:"partial",why:"An unreliable SpO₂ does not prove hypoxaemia. However, if the patient appears acutely unwell and hypoxaemia is clinically suspected, oxygen may need to be started while a reliable measurement or arterial blood gas is obtained.",refs:["barnett2022"]},
@@ -314,7 +314,7 @@ const quizSections = [
       prompt:"How is hypoxaemia identified in acute care?",
       type:"multi",
       options:[
-        {id:"abg",text:"Arterial blood gas (PaO₂ or SaO₂)",grade:"correct",why:"An arterial blood gas provides direct information about arterial oxygenation and is used when more precise assessment is required.",refs:["barnett2022","odriscoll2017"]},
+        {id:"abg",text:"Arterial blood gas (PaO₂)",grade:"correct",why:"An arterial blood gas directly measures PaO₂ and provides more precise information about arterial oxygenation when required.",refs:["barnett2022","odriscoll2017"]},
         {id:"co2",text:"CO₂ level on a blood gas (PaCO₂ or PvCO₂)",grade:"wrong",why:"CO₂ primarily provides information about ventilation and acid-base physiology. It does not determine whether the patient is hypoxaemic.",refs:["barnett2022"]},
         {id:"cyanosis",text:"Cyanosis",grade:"partial",why:"Cyanosis can increase suspicion of hypoxaemia, but it is not reliable enough to determine oxygenation by itself. Appearance can be affected by perfusion, haemoglobin level, lighting and other factors.",refs:["odriscoll2017"]},
         {id:"spo2",text:"Pulse oximetry (SpO₂)",grade:"correct",why:"Pulse oximetry is the routine non-invasive method used to estimate arterial oxygen saturation and screen for hypoxaemia.",refs:["barnett2022","pretto2014"]},
@@ -335,11 +335,11 @@ const quizSections = [
         {id:"signal_factors",text:"Movement, shivering, poor circulation, cold extremities, sensor position, nail products, bright light or measurement site can affect the reading",grade:"correct",why:"Pulse oximetry relies on an adequate optical and pulsatile signal. Patient, sensor and environmental factors can impair measurement accuracy.",refs:["pretto2014","fda2025"]},
         {id:"paO2",text:"Does not show how high the PaO₂ is once saturation is near 100%",grade:"correct",why:"At high saturations, the oxyhaemoglobin dissociation curve flattens. A SpO₂ near 100% cannot tell you whether PaO₂ is moderately elevated or extremely high.",refs:["pretto2014","seeley2015"]},
         {id:"flowing",text:"Does not tell you whether oxygen is actually flowing or the delivery system is connected properly",grade:"correct",why:"SpO₂ measures the patient’s physiological response. It does not directly monitor the oxygen source, tubing, flowmeter or patient interface.",refs:["odriscoll2017","moga2016"]},
-        {id:"intermittent",text:"Intermittent checks can miss changes between assessments",grade:"correct",why:"A spot reading only describes one moment in time. Desaturation or deterioration can occur between measurements.",refs:["mcgrath2026","khanna2020"]},
-        {id:"co",text:"May be misleading in abnormal haemoglobin states",grade:"correct",why:"Conventional pulse oximetry cannot reliably distinguish some abnormal haemoglobin species and can therefore produce misleadingly reassuring readings.",refs:["pretto2014"]},
+        {id:"intermittent",text:"Intermittent checks can miss changes between assessments",grade:"correct",why:"A spot reading only describes one moment in time. Desaturation or deterioration can occur between measurements.",refs:["downey2018","khanna2020"]},
+        {id:"co",text:"May be misleading in abnormal haemoglobin states",grade:"correct",why:"Conventional pulse oximetry cannot reliably distinguish some abnormal haemoglobin species and can therefore produce misleading readings. For example, carboxyhaemoglobin can produce a falsely reassuring SpO₂.",refs:["pretto2014"]},
         {id:"skin",text:"May read falsely high in some people with darker skin",grade:"correct",why:"Studies have found greater risk of pulse oximetry overestimating arterial saturation in some patients with darker skin pigmentation. Performance varies by device and circumstance.",refs:["sjoding2020","fawzy2022"]},
-        {id:"stale",text:"Values may be delayed, held or stale when the signal is poor or lost",grade:"correct",why:"Signal averaging and signal loss can mean a displayed value does not fully reflect the patient’s current condition.",refs:["pretto2014","fda2025"]},
-        {id:"unreliable_on_o2",text:"Pulse oximetry is less reliable in a patient receiving supplemental oxygen",grade:"wrong",why:"Supplemental oxygen does not inherently make the pulse oximeter less accurate. The concern is that a reassuring SpO₂ can persist despite worsening ventilation or respiratory depression, so SpO₂ must be interpreted alongside the patient’s overall respiratory assessment.",refs:["pretto2014","khanna2020"]},
+        {id:"stale",text:"Signal averaging or poor signal quality can delay or distort the displayed SpO₂ response",grade:"correct",why:"The displayed value may not fully reflect a rapid change in the patient’s current oxygenation. Device behaviour varies when signal quality is poor or lost.",refs:["pretto2014","fda2025"]},
+        {id:"unreliable_on_o2",text:"Supplemental oxygen makes the pulse oximeter itself less accurate",grade:"wrong",why:"Supplemental oxygen does not inherently make the pulse oximeter less accurate. The concern is that a reassuring SpO₂ can persist despite worsening ventilation or respiratory depression, so SpO₂ must be interpreted alongside the patient’s overall respiratory assessment.",refs:["pretto2014","khanna2020"]},
         {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
       ],}]
   },
@@ -375,7 +375,7 @@ const quizSections = [
         {id:"tubing",text:"Leaks, kinks or disconnections in the tubing",grade:"correct",why:"These can reduce or completely interrupt oxygen delivery.",refs:["moga2016"]},
         {id:"flow",text:"Oxygen flow rate",grade:"correct",why:"Flow influences oxygen delivery, although the relationship between flow and FiO₂ depends on the device.",refs:["moga2016"]},
         {id:"device",text:"Type of oxygen delivery device",grade:"correct",why:"Nasal cannulae, simple masks, Venturi masks, reservoir masks and high-flow systems deliver oxygen differently and provide different degrees of FiO₂ control.",refs:["moga2016"]},
-        {id:"source",text:"Type of oxygen source (e.g., liquid oxygen, compressed cylinder, PSA plant, oxygen concentrator)",grade:"correct",why:"Different oxygen sources can influence the oxygen that ultimately reaches the patient. The differences may be small when systems are functioning normally, but sources can differ in oxygen concentration, available flow and pressure, capacity, reliability, and risk of interruption or depletion.",refs:["who2020","tariq2024"]},
+        {id:"source",text:"Oxygen source characteristics, including concentration, available flow or pressure, capacity and reliability",grade:"correct",why:"Oxygen sources differ in concentration, available flow and pressure, capacity and reliability. If a source cannot provide the required concentration, flow or pressure—or is depleted or interrupted—the patient may not receive the intended oxygen therapy.",refs:["who2020"]},
         {id:"source_on",text:"Whether the oxygen source is turned on and has adequate oxygen supply",grade:"correct",why:"The delivery system cannot provide the intended therapy if the source is off, depleted or unable to supply the required flow.",refs:["who2020","odriscoll2017"]},
         {id:"unsure",text:"I’m not confident in my answer",grade:"confidence",confidence:true,why:"",refs:[]}
       ],}]
@@ -408,7 +408,7 @@ const quizSections = [
           {id:"false",text:"False",grade:"correct",why:"A stable SpO₂ does not mean ventilation or respiratory status is stable. Respiratory rate can change before oxygen saturation falls, and supplemental oxygen can maintain SpO₂ even when breathing becomes dangerously slow or ineffective.",refs:["hill2020","khanna2020"]}
         ],},
       {
-        id:"q6e",prompt:"Improving global access to medical oxygen requires nurses to be involved in how oxygen is used, implemented and managed.",type:"single",
+        id:"q6e",prompt:"Brown et al. (2025) argue that improving global access to medical oxygen requires nurses to be involved in how oxygen is used, implemented and managed.",type:"single",
         options:[
           {id:"true",text:"True",grade:"correct",why:"Nurses are central to how oxygen therapy is assessed, administered, monitored and sustained in practice. The authors call for nurses to be involved and empowered in medical-oxygen policy, implementation, training, education, and decisions about resource allocation and use.",refs:["brown2025"]},
           {id:"false",text:"False",grade:"wrong",why:"Nurses are central to how oxygen therapy is assessed, administered, monitored and sustained in practice. The authors call for nurses to be involved and empowered in medical-oxygen policy, implementation, training, education, and decisions about resource allocation and use.",refs:["brown2025"]}
@@ -441,12 +441,12 @@ const optionalFeedback = {
 const app = document.getElementById("app");
 
 const REMOTE_API_URL = "https://agctxecwjdoypavqlbya.supabase.co/functions/v1/motv-submit";
-const QUIZ_VERSION = "MOTV-LunchLearn-2026-09-v3";
+const QUIZ_VERSION = "MOTV-LunchLearn-2026-09-v4";
 const EVENT_KEY = "rrc-2026-09-24";
-const SESSION_KEY = "motv_live_session_v3";
-const COMPLETED_KEY = "motv_submission_completed_v3";
-const LAST_SUBMISSION_KEY = "motv_last_submission_v3";
-const EVER_SUBMITTED_KEY = "motv_has_submitted_once_v3";
+const SESSION_KEY = "motv_live_session_v4";
+const COMPLETED_KEY = "motv_submission_completed_v4";
+const LAST_SUBMISSION_KEY = "motv_last_submission_v4";
+const EVER_SUBMITTED_KEY = "motv_has_submitted_once_v4";
 const MAIN_IDS = ["q1","q2","q3","q4","q5"];
 const TF_IDS = ["q6a","q6b","q6c","q6d","q6e","q6f"];
 
